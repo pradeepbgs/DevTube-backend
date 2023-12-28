@@ -4,7 +4,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary";
 import videoModel from "../models/video.model";
 import { apiResponce } from "../utils/apiResponce";
 
-const videoUpload = asyncHandler(async (req, res, next) => {
+const videoUpload = asyncHandler(async (req, res) => {
     // get the title, description, tags, thumbnail from the request body
     // get the user from req.user
     // check if the user is authenticated 
@@ -34,14 +34,11 @@ const videoUpload = asyncHandler(async (req, res, next) => {
            const thumbnailUrl = await uploadOnCloudinary(thumbnail)
            if(!thumbnail) throw new apiError('thumbnail upload failed')
 
-           const user = req.user;
-           if(!user) throw new apiError('user not found')
-
            const uploadedVideo = await videoModel.create({
             title,
             description,
-            videoFile: video.url | "",
-            thumbnail: thumbnailUrl.url | "",
+            videoFile: video.url ?? "",
+            thumbnail: thumbnailUrl.url ?? "",
             owner: user._id,
          })
 
@@ -66,8 +63,143 @@ const videoUpload = asyncHandler(async (req, res, next) => {
     
 })
 
+const videoDetails = asyncHandler(async (req, res) => {
 
+    const {videoId} = req.params;
+
+    try {
+        if(!videoId){
+            throw new apiError(401, "cant find video id")
+        }
+
+        const video = await videoModel.findById(videoId)
+        if(!video){
+            throw new apiError(401, "video not found")
+        }
+
+        return res
+        .status(200)
+        .json(
+            new apiResponce(
+                200,
+                video,
+                "video details fetched successfully"
+            )
+        )
+
+    } catch (error) {
+        console.log("error in video.controller.js on videoDeatils controller")
+        throw new apiError(
+            401,
+            "error while fetching video details"
+        )
+    }
+})
+
+const thumbnailChnage = asyncHandler(async (req,res) => {
+
+    const {videoId} = req.params;
+    const {thumbnail} = req.file?.path;
+
+    try {
+        if(!videoId){
+            throw new apiError(401, "cant find video id")
+        }
+        if(!thumbnail){
+            throw new apiError('thumbnail required')
+        }
+
+        const thumnailUrl = await uploadOnCloudinary(thumbnail)
+        if(!thumnailUrl){
+            throw new apiError(401, "error while uploading on cloudinary")
+        }
+
+        await videoModel.findByIdAndUpdate(videoId, {
+            $set: {
+                thumbnail: thumnailUrl.url
+            }
+        })
+
+    } catch (error) {
+        console.log("error in video.controller.js on thumbnailChnage controller")
+        throw new apiError(
+            401,
+            "error while updating video's thumbnail"
+        )
+    }
+
+})
+
+const videoDetailsChange = asyncHandler(async (req, res) => {
+
+    const {videoId} = req.params;
+    const {title, description} = req.body;
+
+    try {
+
+        if(!videoId){
+           throw new apiError(401, "cant find video id")
+        }
+        if(!title || !description){
+            throw new apiError(401, "title and description are required")
+        }
+
+       await videoModel.findByIdAndUpdate(videoId, {
+            $set: {
+                title,
+                description
+            }
+        })
+
+        return res
+        .status(200)
+        .json(
+            new apiResponce(
+                200,
+                "video details updated successfully",
+            )
+        )
+        
+    } catch (error) {
+        console.log("error in video.controller.js on videoDetailsChange controller")
+        throw new apiError(401, "error while updating video's details" + error.message)
+    }
+
+})
+
+const deleteVideo = asyncHandler(async (req, res) => {
+
+    const {videoId} = req.params;
+
+    try {
+        if(!videoId){
+            res.status(401).json(new apiError(401, "cant find video id"))
+        }
+
+        const deletedVideo = await videoModel.findByIdAndDelete(videoId)
+
+        if(!deletedVideo){
+          throw new apiError(401, "video not found")
+        }
+
+        return res
+        .status(200)
+        .json(
+            new apiResponce(
+                200,
+                "video deleted successfully",
+            )
+        )
+    } catch (error) {
+        console.log("error in video.controller.js on deleteVideo controller")
+        throw new apiError(401, "error while deleting video" + error.message)
+    }
+})
 
 export {
     videoUpload,
+    thumbnailChnage,
+    videoDetailsChange,
+    deleteVideo,
+    videoDetails
 }

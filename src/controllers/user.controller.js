@@ -78,8 +78,8 @@ let coverImageLocalpath;
 
  const user = await User.create({
      fullname:fullname,
-     avatar: avatar.url || "",
-     coverImage: coverImage?.url || "",
+     avatar: avatar.url ?? "",
+     coverImage: coverImage?.url ?? "",
      email: email,
      password: password,
      username: username.toLowerCase()
