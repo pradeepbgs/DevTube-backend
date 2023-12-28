@@ -56,12 +56,52 @@ const subscriber  = asyncHandler(async (req, res) => {
 
 })
 
+const unsubscribe = asyncHandler(async (req, res) => {
+    // get the user
+    // get the channel
+    // delete the subscription
+    // return the res
 
+    const user = req.user;
+    const {channelId} = req.params;
+
+    try {
+        if(!user){
+            throw new apiError(401, "user not found")
+        }
+        if(!channelId){
+            throw new apiError(401, "channel not found")
+        }
+
+       const subscription =   await subscriptionModel.findOneAndDelete({
+            user: user._id,
+            channel: channelId,
+        })
+
+        if(!subscription){
+            throw new apiError(401, "user is not subscribed to the channel")
+        }
+
+        return res
+        .status(200)
+        .json(
+            new apiResponce(
+                200,
+                subscription,
+                "unsubscription successfull"
+            )
+        )
+
+    } catch (error) {
+        throw new apiError(401, "error while unsubscribing")
+    }
+})
 
 
 
 
 
 export {
-    subscriber
+    subscriber,
+    unsubscribe,
 }
