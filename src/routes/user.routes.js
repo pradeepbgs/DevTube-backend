@@ -37,44 +37,44 @@ router.route("/register").post(
         }
     ]),
     registerUser
-    )
+    );
 
-router.route("/login").post(loginUser)  
+router.route("/login").post(loginUser);  
 
 // secured routes
 
-router.route("/logout").post( verifyJwt , logoutUser)
-router.route('/refresh-token').post( refreshAccessToken)
-router.route('/change-password').post( verifyJwt , changeCurrentPassword)
-router.route('/current-user').get( verifyJwt , getCurrentUser)
+router.route("/logout").post( verifyJwt , logoutUser);
+router.route('/refresh-token').post( refreshAccessToken);
+router.route('/change-password').post( verifyJwt , changeCurrentPassword);
+router.route('/current-user').get( verifyJwt , getCurrentUser);
 router.route('/update-account-details').patch(verifyJwt, 
-    updateAccountDetail)
+    updateAccountDetail);
  
 router.route('/avatar-change').patch(verifyJwt, upload.single('avatar'), 
-updateUserAvatar)
+updateUserAvatar);
 
 router.route('/cover-image').patch(verifyJwt, upload.single('coverImage'),
-updateUserCoverImage)
+updateUserCoverImage);
 
-router.route('/channel/:username').get(verifyJwt, getCurrentUser)
-router.route('/history').get(verifyJwt, getWatchHistory)
+router.route('/channel/:username').get(verifyJwt, getCurrentUser);
+router.route('/history').get(verifyJwt, getWatchHistory);
 
 // routes for video upload
-router.route('/upload').post(verifyJwt, upload.single('video'),videoUpload)
+router.route('/upload').post(verifyJwt, upload.single('video'),videoUpload);
 
 router.route('/change-thumbnail/:videoId')
-.patch(verifyJwt, upload.single('thumbnail'), thumbnailChnage)
+.patch(verifyJwt, upload.single('thumbnail'), thumbnailChnage);
 
-router.route('/video-details/:videoId').get(verifyJwt, videoDetails)
+router.route('/video-details/:videoId').get(verifyJwt, videoDetails);
 
-router.route('/video-details-change/:videoId').patch(verifyJwt, videoDetailsChange)
+router.route('/video-details-change/:videoId').patch(verifyJwt, videoDetailsChange);
 
-router.route('/video-delete/:videoId').post(verifyJwt, deleteVideo)
+router.route('/video-delete/:videoId').post(verifyJwt, deleteVideo);
 
 /// subscription 
 
-router.route('/subscribe/:channelId').post(verifyJwt, subscriber)
+router.route('/subscribe/:channelId').post(verifyJwt, subscriber);
 
-router.route('/unsubscribe/:channelId').post(verifyJwt, unsubscribe)
+router.route('/unsubscribe/:channelId').post(verifyJwt, unsubscribe);
 
 export default router;
