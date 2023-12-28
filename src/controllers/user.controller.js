@@ -5,7 +5,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { apiResponce } from "../utils/apiResponce.js";
 import fs from "fs";
 import jwt from 'jsonwebtoken'
-import { channel } from "diagnostics_channel";
+import { mongoose } from "mongoose";
 
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -228,7 +228,11 @@ const changeCurrentPassword = asyncHandler( async (req, res) => {
 
       const user = await User.findById(req.user?._id)
 
+      console.log(oldPassword, newPassword)
+      console.log(user)
+
      const isPasswordCorrect =  await user.isPasswordCorrect(oldPassword)
+     console.log(isPasswordCorrect)
 
      if(!isPasswordCorrect){
        throw new apiError(400, "Old password is incorrect")
@@ -290,11 +294,10 @@ const updateAccountDetail = asyncHandler( async (req, res) => {
 
 const updateUserAvatar = asyncHandler( async (req, res) => {
 
+  const avatarLocalpath =  req.file?.path
    try {
-    const avatarLocalpath =  req.file?.path
  
     if(!avatarLocalpath) return new apiError(400, "Avatar file is missing")
- 
  
     const avatar = await uploadOnCloudinary(avatarLocalpath)
     if(!avatar.url) return new apiError(400, "Error while uploading on cloudinary, user.controller.js line no 299")
@@ -324,11 +327,9 @@ const updateUserAvatar = asyncHandler( async (req, res) => {
 
 const updateUserCoverImage = asyncHandler( async (req, res) => {
 
+  const coverImageLocalpath =  req.file?.path
   try {
-    const coverImageLocalpath =  req.file?.path
-  
     if(!coverImageLocalpath) return new apiError(400, "Cover image file is missing")
-  
   
     const coverImage = await uploadOnCloudinary(coverImageLocalpath)
     if(!coverImage.url) return new apiError(400, "Error while uploading on cloudinary, user.controller.js line no 314")
@@ -356,15 +357,13 @@ const updateUserCoverImage = asyncHandler( async (req, res) => {
   }
 })
 
-
-
 const getUserChannelProfile = asyncHandler(async (req, res) => {
   
      const {username} = req.params
 
      if(!username?.trim()) return new apiError(400, "username is required")
 
-     const channnel = await User.aggregate([
+     const channel = await User.aggregate([
       {
         $match: { 
           username: username?.toLowerCase()

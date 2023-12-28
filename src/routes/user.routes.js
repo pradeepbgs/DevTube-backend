@@ -41,7 +41,7 @@ router.route('/change-password').post( verifyJwt , changeCurrentPassword)
 router.route('/current-user').get( verifyJwt , getCurrentUser)
 router.route('/update-account-details').patch(verifyJwt, 
     updateAccountDetail)
-
+ 
 router.route('/avatar-change').patch(verifyJwt, upload.single('avatar'), 
 updateUserAvatar)
 
