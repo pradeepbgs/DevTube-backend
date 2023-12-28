@@ -20,6 +20,7 @@ import {
      videoDetailsChange, 
      videoUpload 
     } from "../controllers/video.controller.js";
+import { subscriber, unsubscribe } from "../controllers/subscription.controller.js";
 
 const router = Router();
 
@@ -61,13 +62,19 @@ router.route('/history').get(verifyJwt, getWatchHistory)
 // routes for video upload
 router.route('/upload').post(verifyJwt, upload.single('video'),videoUpload)
 
-router.route('/change-thumbnail')
+router.route('/change-thumbnail/:videoId')
 .patch(verifyJwt, upload.single('thumbnail'), thumbnailChnage)
 
-router.route('/video-details/:id').get(verifyJwt, videoDetails)
+router.route('/video-details/:videoId').get(verifyJwt, videoDetails)
 
-router.route('/video-details-change').patch(verifyJwt, videoDetailsChange)
+router.route('/video-details-change/:videoId').patch(verifyJwt, videoDetailsChange)
 
-router.route('/video-delete').post(verifyJwt, deleteVideo)
+router.route('/video-delete/:videoId').post(verifyJwt, deleteVideo)
+
+/// subscription 
+
+router.route('/subscribe/:channelId').post(verifyJwt, subscriber)
+
+router.route('/unsubscribe/:channelId').post(verifyJwt, unsubscribe)
 
 export default router;
