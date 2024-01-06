@@ -21,6 +21,7 @@ import {
      videoUpload 
     } from "../controllers/video.controller.js";
 import { subscriber, unsubscribe } from "../controllers/subscription.controller.js";
+import { verify } from "crypto";
 
 const router = Router();
 
@@ -44,7 +45,7 @@ router.route("/login").post(loginUser);
 // secured routes
 
 router.route("/logout").post( verifyJwt , logoutUser);
-router.route('/refresh-token').post( refreshAccessToken);
+router.route('/refresh-token').post(verifyJwt, refreshAccessToken);
 router.route('/change-password').post( verifyJwt , changeCurrentPassword);
 router.route('/current-user').get( verifyJwt , getCurrentUser);
 router.route('/update-account-details').patch(verifyJwt, 
@@ -60,7 +61,16 @@ router.route('/channel/:username').get(verifyJwt, getCurrentUser);
 router.route('/history').get(verifyJwt, getWatchHistory);
 
 // routes for video upload
-router.route('/upload').post(verifyJwt, upload.single('video'),videoUpload);
+router.route('/upload').post(verifyJwt, upload.fields([
+    {
+        name: "video",
+        maxCount: 1,
+    },
+    {
+        name: 'thumbnail',
+        maxCount: 1
+    }
+]),videoUpload);
 
 router.route('/change-thumbnail/:videoId')
 .patch(verifyJwt, upload.single('thumbnail'), thumbnailChnage);

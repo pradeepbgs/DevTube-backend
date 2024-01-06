@@ -181,14 +181,14 @@ const logoutUser = asyncHandler(async(req, res) => {
 
 const refreshAccessToken = asyncHandler( async (req, res) => {
 
-   const incomingRefreshToken =  req.cookies.refreshToken || req.body.refreshToken
+   const incomingRefreshToken =  req.cookies?.refreshToken || req.body.refreshToken
 
    if(!incomingRefreshToken) throw new apiError(401, "unauthorized request")
 
    try {
     const decodedToken =  jwt.verify(
      incomingRefreshToken, 
-     process.env.REFRESH_ACCESS_TOKEN
+     process.env.REFRESH_TOKEN_SECRET
      )
  
      const user = await User.findById(decodedToken?._id)
@@ -229,10 +229,8 @@ const changeCurrentPassword = asyncHandler( async (req, res) => {
       const user = await User.findById(req.user?._id)
 
       console.log(oldPassword, newPassword)
-      console.log(user)
 
      const isPasswordCorrect =  await user.isPasswordCorrect(oldPassword)
-     console.log(isPasswordCorrect)
 
      if(!isPasswordCorrect){
        throw new apiError(400, "Old password is incorrect")
@@ -258,7 +256,6 @@ const getCurrentUser = asyncHandler( async (req, res) => {
    .status(200)
    .json(200, req.user, "cuurentUser fetched successfully")
 })
-
 
 const updateAccountDetail = asyncHandler( async (req, res) => {
   const {fullname, email} = req.body
@@ -290,7 +287,6 @@ const updateAccountDetail = asyncHandler( async (req, res) => {
   )
 
 })
-
 
 const updateUserAvatar = asyncHandler( async (req, res) => {
 
@@ -395,7 +391,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
           },
           isSubscribed : {
              $cond: {
-               if: {$in: [req.user?._id, "$sunscribers.subscriber"]},
+               if: {$in: [req.user?._id, "$subscriber"]},
                then: true,
                else: false
              }
@@ -486,6 +482,9 @@ const getWatchHistory = asyncHandler(async (req, res) => {
       )
     )
 })
+
+
+
 
 export {
   registerUser, 

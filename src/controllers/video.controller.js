@@ -1,8 +1,8 @@
-import { apiError } from "../utils/apiError";
-import { asyncHandler } from "../utils/asyncHandler";
-import { uploadOnCloudinary } from "../utils/cloudinary";
-import videoModel from "../models/video.model";
-import { apiResponce } from "../utils/apiResponce";
+import { apiError } from "../utils/apiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import videoModel from "../models/video.model.js";
+import { apiResponce } from "../utils/apiResponce.js";
 
 const videoUpload = asyncHandler(async (req, res) => {
     // get the title, description, tags, thumbnail from the request body
@@ -15,9 +15,9 @@ const videoUpload = asyncHandler(async (req, res) => {
 
     const user = req.user;
     const { title, description } = req.body
-    const {videoFile} = req.files?.video[0]?.path;
-    const {thumbnail} = req.files?.thumbnail[0]?.path;
-    
+    const videoFile = req.files?.video[0]?.path;
+    const thumbnail = req.files?.thumbnail[0]?.path;
+
     try {
 
         if(!user) return res.status(401).json(new apiError(401, "user not found"))
@@ -53,7 +53,7 @@ const videoUpload = asyncHandler(async (req, res) => {
          )
 
     } catch (error) {
-        console.log("error in video.controller.js on videoupload controller")
+        console.log("error in video.controller.js on videoupload controller"+error)
         return res
         .status(500)
         .json(
@@ -89,9 +89,10 @@ const videoDetails = asyncHandler(async (req, res) => {
 
     } catch (error) {
         console.log("error in video.controller.js on videoDeatils controller")
-        throw new apiError(
-            401,
-            "error while fetching video details"
+        return res
+        .status(400)
+        .json(
+            new apiError(401, "error while fetching video details or maybe video is deleted")
         )
     }
 })
@@ -99,8 +100,7 @@ const videoDetails = asyncHandler(async (req, res) => {
 const thumbnailChnage = asyncHandler(async (req,res) => {
 
     const {videoId} = req.params;
-    const {thumbnail} = req.file?.path;
-
+    const thumbnail = req.file?.path;
     try {
         if(!videoId){
             throw new apiError(401, "cant find video id")
@@ -120,6 +120,16 @@ const thumbnailChnage = asyncHandler(async (req,res) => {
             }
         })
 
+        return res
+        .status(200)
+        .json(
+            new apiResponce(
+                200,
+                thumnailUrl.url,
+                "thumbnail updated successfully"
+            )
+        )
+
     } catch (error) {
         console.log("error in video.controller.js on thumbnailChnage controller")
         throw new apiError(
@@ -135,6 +145,7 @@ const videoDetailsChange = asyncHandler(async (req, res) => {
     const {videoId} = req.params;
     const {title, description} = req.body;
 
+    console.log(title, description)
     try {
 
         if(!videoId){

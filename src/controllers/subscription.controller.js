@@ -1,7 +1,7 @@
-import { apiError } from "../utils/apiError";
-import { asyncHandler } from "../utils/asyncHandler";
-import { subscriptionModel } from "../models/subscription.model";
-import { apiResponce } from "../utils/apiResponce";
+import { apiError } from "../utils/apiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { Subscription as subscriptionModel} from "../models/subscription.model.js";
+import { apiResponce } from "../utils/apiResponce.js";
 
 const subscriber  = asyncHandler(async (req, res) => {
     // get the user who is trying to subscribe
