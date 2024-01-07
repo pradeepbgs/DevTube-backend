@@ -54,10 +54,10 @@ router.route('/update-account-details').patch(verifyJwt,
 router.route('/avatar-change').patch(verifyJwt, upload.single('avatar'), 
 updateUserAvatar);
 
-router.route('/cover-image').patch(verifyJwt, upload.single('coverImage'),
+router.route('/cover-change').patch(verifyJwt, upload.single('coverImage'),
 updateUserCoverImage);
 
-router.route('/channel/:username').get(verifyJwt, getCurrentUser);
+router.route('/c/:username').get(verifyJwt, getCurrentUser);
 router.route('/history').get(verifyJwt, getWatchHistory);
 
 // routes for video upload
