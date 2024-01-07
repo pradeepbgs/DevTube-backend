@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import videoModel from "../models/video.model.js";
 import { apiResponce } from "../utils/apiResponce.js";
+import { cleanUploadedfiles } from "../utils/cleanup.videoFiles.js";
 
 const videoUpload = asyncHandler(async (req, res) => {
     // get the title, description, tags, thumbnail from the request body
@@ -18,21 +19,30 @@ const videoUpload = asyncHandler(async (req, res) => {
     const videoFile = req.files?.video[0]?.path;
     const thumbnail = req.files?.thumbnail[0]?.path;
 
+    console.log(req.files)
+
     try {
 
         if(!user) return res.status(401).json(new apiError(401, "user not found"))
         if(
-            [title,description,thumbnail].some((field) => field?.trim() === "")
+            [title,description].some((field) => field?.trim() === "")
            ){
                 throw new apiError("All field are required", 400)
            }
 
            if(!videoFile) throw new apiError("video file is required")
+           if(!thumbnail) throw new apiError("thumbnail file is required")
 
            const video = await uploadOnCloudinary(videoFile)
-           if(!video) throw new apiError("video upload failed")
+           if(!video){
+            // cleanUploadedfiles(req.files)
+            throw new apiError("video upload failed")
+           }
            const thumbnailUrl = await uploadOnCloudinary(thumbnail)
-           if(!thumbnail) throw new apiError('thumbnail upload failed')
+           if(!thumbnailUrl){
+            // cleanUploadedfiles(req.files)
+            throw new apiError('thumbnail upload failed')
+           }
 
            const uploadedVideo = await videoModel.create({
             title,
@@ -53,6 +63,7 @@ const videoUpload = asyncHandler(async (req, res) => {
          )
 
     } catch (error) {
+        // cleanUploadedfiles(req.files)
         console.log("error in video.controller.js on videoupload controller"+error)
         return res
         .status(500)
@@ -111,6 +122,8 @@ const thumbnailChnage = asyncHandler(async (req,res) => {
 
         const thumnailUrl = await uploadOnCloudinary(thumbnail)
         if(!thumnailUrl){
+            cleanUploadedfiles(req.files)
+            
             throw new apiError(401, "error while uploading on cloudinary")
         }
 
@@ -131,6 +144,7 @@ const thumbnailChnage = asyncHandler(async (req,res) => {
         )
 
     } catch (error) {
+        cleanUploadedfiles(req.files)
         console.log("error in video.controller.js on thumbnailChnage controller")
         throw new apiError(
             401,
