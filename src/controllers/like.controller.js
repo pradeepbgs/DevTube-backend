@@ -3,8 +3,7 @@ import Like from "../models/like.model.js"
 import {apiError} from "../utils/apiError.js"
 import {apiResponse} from "../utils/apiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
-import videoModel from "../models/video.model.js"
-import {Comment} from "../models/comment.model.js"
+
 
 
 
