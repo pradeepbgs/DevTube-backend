@@ -108,10 +108,12 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
     throw new apiError(400, "Invalid playlist or video ID");
   }
 
+  const authenticatedId = req.user;
+
   const playlist = await Playlist.findOneAndUpdate(
     {
       _id: playlistId,
-      owner: req.user?._id,
+      owner: authenticatedId?._id,
     },
     {
       $pull: { videos: videoId },
