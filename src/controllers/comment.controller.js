@@ -5,11 +5,52 @@ import {apiResponse} from "../utils/apiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 
 const getVideoComments = asyncHandler(async (req, res) => {
-    //TODO: get all comments for a video
-    const {videoId} = req.params
-    const {page = 1, limit = 10} = req.query
+  const { videoId } = req.params;
+  const { page = 1, limit = 10 } = req.query;
 
-})
+  if (!mongoose.isValidObjectId(videoId)) {
+      throw apiError(400, "Invalid video id");
+  }
+
+  const result = await commentModel.aggregate([
+      {
+          $match: {
+              video: mongoose.Types.ObjectId(videoId),
+          },
+      },
+      {
+          $lookup: {
+              from: "comments", 
+              localField: "video",
+              foreignField: "_id",
+              as: "comments",
+          },
+      },
+      {
+          $skip: (page - 1) * limit,
+      },
+      {
+          $limit: limit,
+      },
+      {
+          $project: {
+              comments: 1,
+              totalCount: { $size: "$comments" },
+          },
+      },
+  ]);
+
+  const { comments, totalCount } = result[0];
+
+  if (totalCount === 0) {
+      return res.status(200).json(apiResponse(200, "No comments found", []));
+  }
+
+  return res
+      .status(200)
+      .json(apiResponse(200, "Comments found", { comments, totalCount }));
+});
+
 
 const addComment = asyncHandler(async (req, res) => {
     // TODO: add a comment to a video
@@ -87,11 +128,14 @@ const deleteComment = asyncHandler(async (req, res) => {
         _id: commentId,
         owner: userId,
     })
-    
+
     return res
         .status(200)
         .json(apiResponse(200, "Comment deleted successfully"))
 })
+
+
+
 
 export {
     getVideoComments, 
