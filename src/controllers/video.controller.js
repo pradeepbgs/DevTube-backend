@@ -5,6 +5,12 @@ import videoModel from "../models/video.model.js";
 import { apiResponce } from "../utils/apiResponce.js";
 import { cleanUploadedfiles } from "../utils/cleanup.videoFiles.js";
 
+
+const getAllVideos = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
+  //TODO: get all videos based on query, sort, pagination
+})
+
 const videoUpload = asyncHandler(async (req, res) => {
   // get the title, description, tags, thumbnail from the request body
   // get the user from req.user
@@ -32,12 +38,12 @@ const videoUpload = asyncHandler(async (req, res) => {
 
     let thumbnail;
     if (
-        req.files &&
-        Array.isArray(req.files.thumbnail) &&
-        req.files.thumbnail.length > 0
-      ) {
-        thumbnail = req.files.thumbnail[0].path;
-      }
+      req.files &&
+      Array.isArray(req.files.thumbnail) &&
+      req.files.thumbnail.length > 0
+    ) {
+      thumbnail = req.files.thumbnail[0].path;
+    }
 
     if (!user) return res.status(401).json(new apiError(401, "user not found"));
     if ([title, description].some((field) => field?.trim() === "")) {
@@ -76,7 +82,7 @@ const videoUpload = asyncHandler(async (req, res) => {
     );
     return res
       .status(500)
-      .json(new apiError(401, error.message | "error while uploading video"));
+      .json(new apiError(401, error.message || "error while uploading video"));
   }
 });
 
@@ -109,72 +115,63 @@ const videoDetails = asyncHandler(async (req, res) => {
   }
 });
 
-const thumbnailChnage = asyncHandler(async (req, res) => {
+const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+  const { title, description } = req.body;
   const thumbnail = req.file?.path;
+  if (!videoId) {
+    throw new apiError(401, "cant find video id");
+  }
+  
+  const authenticatedId = req.user?._id;
+  if (!authenticatedId) {
+    throw new apiError(401, "user not found");
+  }
+
+
   try {
-    if (!videoId) {
-      throw new apiError(401, "cant find video id");
-    }
-    if (!thumbnail) {
-      throw new apiError("thumbnail required");
-    }
 
-    const thumnailUrl = await uploadOnCloudinary(thumbnail);
-    if (!thumnailUrl) {
-      cleanUploadedfiles(req.files);
-
-      throw new apiError(401, "error while uploading on cloudinary");
-    }
-
-    await videoModel.findByIdAndUpdate(videoId, {
-      $set: {
-        thumbnail: thumnailUrl.url,
-      },
+    const video = await videoModel.findOne({
+      _id: videoId,
+      owner: authenticatedId,
     });
+
+    if (title && title.length > 0) {
+      video.title = title;
+    }
+
+    if (description && description.length > 0) {
+      video.description = description;
+    }
+
+    if (thumbnail) {
+      const thumbnailUrl = await uploadOnCloudinary(thumbnail);
+
+      if (!thumbnailUrl) {
+        throw new apiError(401, "error while uploading on cloudinary");
+      }
+
+      video.thumbnail = thumbnailUrl.url;
+    }
+
+    await video.save();
+
+    const sendResData = {
+      _id: video._id,
+      title: video.title,
+      description: video.description,
+      thumbnail: video.thumbnail,
+    };
 
     return res
       .status(200)
       .json(
-        new apiResponce(200, thumnailUrl.url, "thumbnail updated successfully")
+        new apiResponce(200, sendResData, "video details updated successfully")
       );
   } catch (error) {
-    cleanUploadedfiles(req.files);
-    console.log("error in video.controller.js on thumbnailChnage controller");
-    throw new apiError(401, "error while updating video's thumbnail");
-  }
-});
-
-const videoDetailsChange = asyncHandler(async (req, res) => {
-  const { videoId } = req.params;
-  const { title, description } = req.body;
-
-  console.log(title, description);
-  try {
-    if (!videoId) {
-      throw new apiError(401, "cant find video id");
-    }
-    if (!title || !description) {
-      throw new apiError(401, "title and description are required");
-    }
-
-    await videoModel.findByIdAndUpdate(videoId, {
-      $set: {
-        title,
-        description,
-      },
-    });
-
-    return res
-      .status(200)
-      .json(new apiResponce(200, "video details updated successfully"));
-  } catch (error) {
-    console.log(
-      "error in video.controller.js on videoDetailsChange controller"
-    );
     throw new apiError(
       401,
-      "error while updating video's details" + error.message
+      "error  updating video's details" + error.message
     );
   }
 });
@@ -202,10 +199,48 @@ const deleteVideo = asyncHandler(async (req, res) => {
   }
 });
 
+const togglePublishStatus = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!videoId) {
+    throw new apiError(401, "cant find video id");
+  }
+
+  try {
+    const authenticatedId = req.user?._id;
+
+    const video = await videoModel.findByIdAndUpdate(
+      {
+        _id: videoId,
+        owner: authenticatedId,
+      },
+      {
+        $set: {
+          isPublished: !video.isPublished,
+        },
+      }
+    );
+
+    const sendResData = {
+      _id: video._id,
+      isPublished: video.isPublished,
+    };
+
+    return res
+      .status(200)
+      .json(
+        new apiResponce(200, sendResData, "video status updated successfully")
+      );
+  } catch (error) {
+    return res.status(400).json(new apiError(400, error.message));
+  }
+});
+
 export {
   videoUpload,
-  thumbnailChnage,
-  videoDetailsChange,
+  updateVideo,
   deleteVideo,
   videoDetails,
+  togglePublishStatus,
+  getAllVideos,
 };
