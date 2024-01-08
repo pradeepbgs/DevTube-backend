@@ -9,6 +9,10 @@ const createPlaylist = asyncHandler(async (req, res) => {
     const {name, description} = req.body
 
     //TODO: create playlist
+
+    if (!name) {
+        throw new apiError(400,"name is required")
+    }
 })
 
 const getUserPlaylists = asyncHandler(async (req, res) => {

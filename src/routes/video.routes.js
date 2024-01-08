@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { 
     videoUpload, 
-    videoDetails, 
-    videoDetailsChange, 
-    deleteVideo 
+    videoDetails,  
+    deleteVideo ,
+    updateVideo,
+    togglePublishStatus,
+    getAllVideos,
 } from "../controllers/video.controller.js";
 import { verifyJwt } from "../middlewares/verifyJwt.js";
 import { upload } from "../middlewares/upload.js";
@@ -11,10 +13,12 @@ import { upload } from "../middlewares/upload.js";
 
 
 const router = Router();
-
+router.use(verifyJwt)
 
 // routes for video upload
-router.route('/upload').post(verifyJwt, upload.fields([
+router.route('/')
+.get(getAllVideos)
+.post(upload.fields([
     {
         name: "video",
         maxCount: 1,
@@ -26,12 +30,12 @@ router.route('/upload').post(verifyJwt, upload.fields([
 ]),videoUpload);
 
 
-router.route('/video-details/:videoId').get(verifyJwt, videoDetails);
+router
+    .route('/:videoId')
+    .get(videoDetails)
+    .delete(deleteVideo)
+    .patch(upload.single('thumbnail'),updateVideo);
 
-router.route('/video-details-change/:videoId')
-.patch(verifyJwt,  upload.single('thumbnail'),videoDetailsChange);
-
-router.route('/video-delete/:videoId').post(verifyJwt, deleteVideo);
-
+router.route('/toggle/publish/:videoId').patch(togglePublishStatus);
 
 export default router;

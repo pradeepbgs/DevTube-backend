@@ -9,6 +9,36 @@ import { cleanUploadedfiles } from "../utils/cleanup.videoFiles.js";
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
   //TODO: get all videos based on query, sort, pagination
+
+    try {
+
+      const validSortFields = ['createdAt','title']
+      const validSortTypes = ['asc','desc']
+      if(sortBy && !validSortFields.includes(sortBy)) {
+        throw new apiError('Invalid sort field',400)
+      }
+      if(sortType && !validSortTypes.includes(sortType)) {
+        throw new apiError('Invalid sort type',400)
+      }
+
+      const queryObj = query ? {
+        title: {$regex: new RegExp(query,'i')}
+      }: {}
+
+      const videos = await videoModel
+      .find(queryObj)
+      .sort({ [sortBy]: sortType === 'desc' ? -1 : 1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+
+      return res.status(200).json(new apiResponce(videos, "success", 200));
+
+    } catch (error) {
+      return res
+      .status(400)
+      .json(new apiError(error.message, error.statusCode));
+    }
+
 })
 
 const videoUpload = asyncHandler(async (req, res) => {
