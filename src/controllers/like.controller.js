@@ -1,7 +1,7 @@
 import mongoose, {isValidObjectId} from "mongoose"
 import Like from "../models/like.model.js"
 import {apiError} from "../utils/apiError.js"
-import {apiResponse} from "../utils/apiResponse.js"
+import {apiResponse} from "../utils/apiResponce.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 
 

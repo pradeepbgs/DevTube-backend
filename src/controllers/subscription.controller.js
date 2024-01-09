@@ -1,7 +1,7 @@
 import { apiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Subscription as subscriptionModel} from "../models/subscription.model.js";
-import { apiResponce } from "../utils/apiResponce.js";
+import { apiResponse } from "../utils/apiResponce.js";
 
 const subscriber  = asyncHandler(async (req, res) => {
     // get the user who is trying to subscribe
@@ -44,7 +44,7 @@ const subscriber  = asyncHandler(async (req, res) => {
         return res
         .status(200)
         .json(
-            new apiResponce(
+            new apiResponse(
                 200,
                 subscription,
                 "subscription successfull"
@@ -85,7 +85,7 @@ const unsubscribe = asyncHandler(async (req, res) => {
         return res
         .status(200)
         .json(
-            new apiResponce(
+            new apiResponse(
                 200,
                 subscription,
                 "unsubscription successfull"

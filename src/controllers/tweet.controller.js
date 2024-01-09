@@ -1,7 +1,7 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import Tweet from "../models/tweet.model.js";
 import { apiError } from "../utils/apiError.js";
-import { apiResponce } from "../utils/apiResponce.js";
+import { apiResponse } from "../utils/apiResponce.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const createTweet = asyncHandler(async (req, res) => {
@@ -26,7 +26,7 @@ const createTweet = asyncHandler(async (req, res) => {
 
   return res
   .status(201)
-  .json(apiResponce(true, tweet,"tweet created"));
+  .json(apiResponse(true, tweet,"tweet created"));
 });
 
 const getUserTweets = asyncHandler(async (req, res) => {
@@ -45,7 +45,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
 
   return res
   .status(200)
-  .json(apiResponce(true, tweets, "tweets found"));
+  .json(apiResponse(true, tweets, "tweets found"));
 
 });
 
@@ -70,7 +70,7 @@ const updateTweet = asyncHandler(async (req, res) => {
 
     return res
     .status(200)
-    .json(apiResponce(true, tweet, "tweet updated"));
+    .json(apiResponse(true, tweet, "tweet updated"));
 
 
 });
@@ -103,7 +103,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
 
     return res
     .status(200)
-    .json(apiResponce(200, "tweet deleted"));
+    .json(apiResponse(200, "tweet deleted"));
 
 });
 

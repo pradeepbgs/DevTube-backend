@@ -2,7 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import {apiError} from "../utils/apiError.js";
 import {User} from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import { apiResponce } from "../utils/apiResponce.js";
+import { apiResponse } from "../utils/apiResponce.js";
 import fs from "fs";
 import jwt from 'jsonwebtoken'
 import { mongoose } from "mongoose";
@@ -95,7 +95,7 @@ let coverImageLocalpath;
  }
 
  return res.status(201).json(
-     new apiResponce(200, createdUser,"User created successfully")
+     new apiResponse(200, createdUser,"User created successfully")
  )
 
 })
@@ -143,7 +143,7 @@ const loginUser = asyncHandler(async(req, res) => {
    .cookie("accessToken", accesToken, options)
    .cookie("refreshToken", refreshToken, options)
    .json(
-    new apiResponce(
+    new apiResponse(
       200, 
       {
         user: loggedInUser,
@@ -174,7 +174,7 @@ const logoutUser = asyncHandler(async(req, res) => {
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
     .json(
-      new apiResponce(200, {}, "user logged out")
+      new apiResponse(200, {}, "user logged out")
     )
  
 })
@@ -211,7 +211,7 @@ const refreshAccessToken = asyncHandler( async (req, res) => {
       .cookie("accessToken", accesToken, options)
       .cookie("refreshToken", newRefreshToken, options)
       .json(
-       new apiResponce(
+       new apiResponse(
          200,
          {accesToken, refreshToken: newRefreshToken},
          "Access Token refreshed successfully"
@@ -242,7 +242,7 @@ const changeCurrentPassword = asyncHandler( async (req, res) => {
      return res
      .status(200)
      .json(
-      new apiResponce(
+      new apiResponse(
         200,
         {},
         "Password changed successfully"
@@ -279,7 +279,7 @@ const updateAccountDetail = asyncHandler( async (req, res) => {
   return res
   .status(200)
   .json(
-    new apiResponce(
+    new apiResponse(
       200,
       user,
       "Account details updated successfully"
@@ -307,7 +307,7 @@ const updateUserAvatar = asyncHandler( async (req, res) => {
     return res
    .status(200)
    .json(
-     new apiResponce(
+     new apiResponse(
        200,
        user,
        "Avatar image updated successfully"
@@ -339,7 +339,7 @@ const updateUserCoverImage = asyncHandler( async (req, res) => {
     return res
     .status(200)
     .json(
-      new apiResponce(
+      new apiResponse(
         200,
         user,
         "CoverImage updated successfully"
@@ -420,7 +420,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
      return res
      .status(200)
      .json(
-      new apiResponce(
+      new apiResponse(
         200,
         channel[0],
         "User channel fetched successfully"
@@ -475,7 +475,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     return res
     .status(200)
     .json(
-      new apiResponce(
+      new apiResponse(
         200,
         user[0].watchHistory,
         "Watch History fetched successfully"

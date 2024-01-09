@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { verifyJWT } from "../middlewares/verifyJWT.js";
+import { verifyJwt } from "../middlewares/auth.middleware.js"
 import { 
     createTweet, 
     deleteTweet, 
     getUserTweets, 
     updateTweet 
-} from "../controllers/tweet.js";
-import exp from "constants";
+} from "../controllers/tweet.controller.js";
+
 
 
 
@@ -15,7 +15,7 @@ import exp from "constants";
 const router = Router();
 
 
-router.use(verifyJWT)  
+router.use(verifyJwt)  
 
 
 router.route("/").post(createTweet);

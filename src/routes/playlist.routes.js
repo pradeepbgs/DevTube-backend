@@ -1,7 +1,7 @@
 import Router from 'express'
-import { verifyJwt } from '../middlewares/auth.middleware'
+import { verifyJwt } from '../middlewares/auth.middleware.js'
 import { 
-    createPlaylist,
+  createPlaylist,
   getUserPlaylists,
   getPlaylistById,
   addVideoToPlaylist,
@@ -9,7 +9,7 @@ import {
   deletePlaylist,
   updatePlaylist,
 
-} from '../controllers/playlist.controller'
+} from '../controllers/playlist.controller.js'
 
 
 

@@ -7,8 +7,8 @@ import {
     togglePublishStatus,
     getAllVideos,
 } from "../controllers/video.controller.js";
-import { verifyJwt } from "../middlewares/verifyJwt.js";
-import { upload } from "../middlewares/upload.js";
+import { verifyJwt } from "../middlewares/auth.middleware.js";
+import { upload } from "../middlewares/multer.middleware.js";
 
 
 
@@ -20,14 +20,14 @@ router.route('/')
 .get(getAllVideos)
 .post(upload.fields([
     {
-        name: "video",
-        maxCount: 1,
+        name: 'video',
+        maxCount: 1
     },
     {
         name: 'thumbnail',
         maxCount: 1
     }
-]),videoUpload);
+]), videoUpload)
 
 
 router

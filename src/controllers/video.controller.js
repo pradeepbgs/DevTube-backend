@@ -2,7 +2,7 @@ import { apiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import videoModel from "../models/video.model.js";
-import { apiResponce } from "../utils/apiResponce.js";
+import { apiResponse } from "../utils/apiResponce.js";
 import { cleanUploadedfiles } from "../utils/cleanup.videoFiles.js";
 
 
@@ -31,7 +31,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
       .limit(limit * 1)
       .skip((page - 1) * limit)
 
-      return res.status(200).json(new apiResponce(videos, "success", 200));
+      return res.status(200).json(new apiResponse(videos, "success", 200));
 
     } catch (error) {
       return res
@@ -42,14 +42,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
 })
 
 const videoUpload = asyncHandler(async (req, res) => {
-  // get the title, description, tags, thumbnail from the request body
-  // get the user from req.user
-  // check if the user is authenticated
-  // create a new video object with the title, description, tags, thumbnail, user
-  // save the video object to the database
-  // return the video object
-  // res.status
-
   const user = req.user;
   const { title, description } = req.body;
 
@@ -74,6 +66,7 @@ const videoUpload = asyncHandler(async (req, res) => {
     ) {
       thumbnail = req.files.thumbnail[0].path;
     }
+
 
     if (!user) return res.status(401).json(new apiError(401, "user not found"));
     if ([title, description].some((field) => field?.trim() === "")) {
@@ -104,7 +97,7 @@ const videoUpload = asyncHandler(async (req, res) => {
 
     return res
       .status(201)
-      .json(new apiResponce(201, uploadedVideo, "video uploaded successfully"));
+      .json(new apiResponse(201, uploadedVideo, "video uploaded successfully"));
   } catch (error) {
     cleanUploadedfiles(req.files);
     console.log(
@@ -112,7 +105,7 @@ const videoUpload = asyncHandler(async (req, res) => {
     );
     return res
       .status(500)
-      .json(new apiError(401, error.message || "error while uploading video"));
+      .json(new apiError(401, error.message && "error while uploading video"));
   }
 });
 
@@ -131,7 +124,7 @@ const videoDetails = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .json(new apiResponce(200, video, "video details fetched successfully"));
+      .json(new apiResponse(200, video, "video details fetched successfully"));
   } catch (error) {
     console.log("error in video.controller.js on videoDeatils controller");
     return res
@@ -196,7 +189,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     return res
       .status(200)
       .json(
-        new apiResponce(200, sendResData, "video details updated successfully")
+        new apiResponse(200, sendResData, "video details updated successfully")
       );
   } catch (error) {
     throw new apiError(
@@ -208,13 +201,15 @@ const updateVideo = asyncHandler(async (req, res) => {
 
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-
   try {
     if (!videoId) {
       res.status(401).json(new apiError(401, "cant find video id"));
     }
 
-    const deletedVideo = await videoModel.findByIdAndDelete(videoId);
+    const deletedVideo = await videoModel.findOneAndDelete({
+      _id: videoId,
+      owner: req.user?._id,
+    });
 
     if (!deletedVideo) {
       throw new apiError(401, "video not found");
@@ -222,7 +217,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .json(new apiResponce(200, "video deleted successfully"));
+      .json(new apiResponse(200, "video deleted successfully"));
   } catch (error) {
     console.log("error in video.controller.js on deleteVideo controller");
     throw new apiError(401, "error while deleting video" + error.message);
@@ -259,7 +254,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     return res
       .status(200)
       .json(
-        new apiResponce(200, sendResData, "video status updated successfully")
+        new apiResponse(200, sendResData, "video status updated successfully")
       );
   } catch (error) {
     return res.status(400).json(new apiError(400, error.message));
