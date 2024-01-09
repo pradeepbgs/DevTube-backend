@@ -30,8 +30,8 @@ const createTweet = asyncHandler(async (req, res) => {
 const getUserTweets = asyncHandler(async (req, res) => {
   // TODO: get user tweets
   const { userId } = req.params;
-  if (!userId) {
-    throw new apiError("userID can't find OR invalid user ID");
+  if (!userId || !isValidObjectId(userId)) {
+     return res.status(400).json(new apiError(400, "Invalid user id") && "invalid user ID or Cant find ID");
   }
 
   const userTweets = await Tweet.aggregate([
@@ -58,9 +58,17 @@ const getUserTweets = asyncHandler(async (req, res) => {
       },
     },
   ]);
+
+  if (userTweets.length === 0) {
+    return res.status(404).json(new apiError("User tweets not found", 404));
+  }
+
+  const allTweetsCount = await Tweet.countDocuments({ owner: userId });
+
+
   return res
   .status(200)
-  .json(new apiResponse(true, userTweets,"user tweets"));
+  .json(new apiResponse(true, {userTweets,allTweetsCount},"user tweets"));
 });
 
 const updateTweet = asyncHandler(async (req, res) => {
@@ -109,7 +117,9 @@ const deleteTweet = asyncHandler(async (req, res) => {
     throw new apiError("tweet not found");
   }
 
-  return res.status(200).json(new apiResponse(200, "tweet deleted"));
+  return res
+  .status(200)
+  .json(new apiResponse(200, "tweet deleted"));
 });
 
 export { createTweet, getUserTweets, updateTweet, deleteTweet };
