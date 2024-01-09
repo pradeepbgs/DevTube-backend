@@ -57,12 +57,8 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
 const getPlaylistById = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
   //TODO: get playlist by id
-  if (!playlistId) {
-    throw new apiError(400, "playlist id is required");
-  }
-
-  if (!isValidObjectId(playlistId)) {
-    throw new apiError(400, "playlist id is not valid");
+  if (!playlistId || !isValidObjectId(playlistId)) {
+    throw new apiError(400, "playlist id is not valid OR playlist id is required");
   }
 
   const playlist = await Playlist.findById(playlistId);
@@ -77,17 +73,12 @@ const getPlaylistById = asyncHandler(async (req, res) => {
 
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
   const { playlistId, videoId } = req.params;
-  if (!playlistId) {
-    throw new apiError(400, "playlist id is required");
+  if (!playlistId || !isValidObjectId(playlistId)) {
+    throw new apiError(400, "playlist id is required OR playlist id is not valid");
   }
-  if (!isValidObjectId(playlistId)) {
-    throw new apiError(400, "playlist id is not valid");
-  }
-  if (!videoId) {
-    throw new apiError(400, "video id is required");
-  }
-  if (!isValidObjectId(videoId)) {
-    throw new apiError(400, "video id is not valid");
+ 
+  if (!isValidObjectId(videoId) || !videoId) {
+    throw new apiError(400, "video id is not valid or required");
   }
 
   const playlist = await Playlist.findByIdAndUpdate({
@@ -99,6 +90,7 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(apiResponse(200, playlist, "video added to playlist successfully"));
+    
 });
 
 const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
@@ -175,6 +167,7 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     .json(apiResponse(200, "playlist updated successfully"));
 
 });
+
 
 export {
   createPlaylist,
