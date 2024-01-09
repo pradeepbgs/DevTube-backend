@@ -5,14 +5,14 @@ import { apiResponse } from "../utils/apiResponce.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const createTweet = asyncHandler(async (req, res) => {
-  //TODO: create tweet
-  const content = req.body;
-  if (!content) {
-    throw new apiError("pls");
+  const  {content}  = req.body;
+
+  if (!content || typeof content !== 'string') {
+    return res.status(400).json(new apiError(400,  "Tweet content is required"));
   }
 
   if (!req.user) {
-    throw new apiError("user can't find, pls login");
+     return res.status(400).json(new apiError(400, "User is required"));
   }
 
   const tweet = await Tweet.create({
@@ -21,13 +21,14 @@ const createTweet = asyncHandler(async (req, res) => {
   });
 
   if (!tweet) {
-    throw new apiError("tweet not created");
+    throw new apiError("Tweet not created");
   }
 
   return res
-  .status(201)
-  .json(apiResponse(true, tweet,"tweet created"));
+    .status(201)
+    .json(new apiResponse(true, tweet, "Tweet created"));
 });
+
 
 const getUserTweets = asyncHandler(async (req, res) => {
   // TODO: get user tweets
@@ -45,13 +46,13 @@ const getUserTweets = asyncHandler(async (req, res) => {
 
   return res
   .status(200)
-  .json(apiResponse(true, tweets, "tweets found"));
+  .json(new apiResponse(true, tweets, "tweets found"));
 
 });
 
 const updateTweet = asyncHandler(async (req, res) => {
   //TODO: update tweet
-  const content = req.body;
+  const {content} = req.body;
   if (!content) {
     throw new apiError("pls write something");
   }
@@ -70,14 +71,14 @@ const updateTweet = asyncHandler(async (req, res) => {
 
     return res
     .status(200)
-    .json(apiResponse(true, tweet, "tweet updated"));
+    .json(new apiResponse(true, tweet, "tweet updated"));
 
 
 });
 
 const deleteTweet = asyncHandler(async (req, res) => {
   //TODO: delete tweet
-  const tweetId = req.params.id;
+  const {tweetId} = req.params;
   if (!tweetId) {
     throw new apiError("cant find tweet id");
   }
@@ -103,7 +104,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
 
     return res
     .status(200)
-    .json(apiResponse(200, "tweet deleted"));
+    .json(new  apiResponse(200, "tweet deleted"));
 
 });
 
