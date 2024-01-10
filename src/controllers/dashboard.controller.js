@@ -98,7 +98,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
             },
             {
                 $lookup: {
-                    from: "video",
+                    from: "videos",
                     localField: "_id",
                     foreignField: "owner",
                     as: "videos"
@@ -125,7 +125,10 @@ const getChannelVideos = asyncHandler(async (req, res) => {
 
 })
 
+
 export {
     getChannelStats, 
     getChannelVideos
     }
+
+    

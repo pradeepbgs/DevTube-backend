@@ -15,40 +15,58 @@ const getVideoComments = asyncHandler(async (req, res) => {
   const result = await commentModel.aggregate([
       {
           $match: {
-              video: mongoose.Types.ObjectId(videoId),
+              video:new  mongoose.Types.ObjectId(videoId),
           },
       },
       {
           $lookup: {
-              from: "comments", 
-              localField: "video",
+              from: "users", 
+              localField: "owner",
               foreignField: "_id",
-              as: "comments",
+              as: "owner",
+              pipeline: [
+                  {
+                      $project: {
+                          username: 1,
+                          avatar: 1,
+                      }
+                  },
+                  {
+                    $addFields: {
+                        owner: {$arrayElemAt: ["$owner", 0]}
+                    }
+                  }
+              ]
           },
       },
       {
-          $skip: (page - 1) * limit,
+        $unwind: "$owner",
       },
       {
-          $limit: limit,
-      },
+        $skip: (page - 1) * limit,
+     },
+     {
+        $limit: limit,
+     },
       {
           $project: {
-              comments: 1,
-              totalCount: { $size: "$comments" },
+              content: 1,
+              "owner.username": 1,
+              "owner.avatar": 1,
           },
       },
   ]);
 
-  const { comments, totalCount } = result[0];
-
-  if (totalCount === 0) {
-      return res.status(200).json(apiResponse(200, "No comments found", []));
+  if (result.length === 0) {
+      return res.status(200).json(new apiError(200, "No comments found"));
   }
 
   return res
       .status(200)
-      .json(apiResponse(200, "Comments found", { comments, totalCount }));
+      .json(new apiResponse(200, "Comments found", result));
+
+
+
 });
 
 
@@ -58,12 +76,13 @@ const addComment = asyncHandler(async (req, res) => {
     const userId = req.user;
 
     if (!mongoose.isValidObjectId(videoId) || !req.user._id) {
-        throw apiError(400, "Invalid video id or user id");
+        throw new apiError(400, "Invalid video id or user id");
     }
 
-    const content = req.body; 
+    const {content} = req.body; 
+    console.log(content);
     if (!content) {
-        throw apiError(400, "Comment text is required");
+        throw new apiError(400, "Comment text is required");
     }
 
     const comment = await commentModel.create({
@@ -78,7 +97,7 @@ const addComment = asyncHandler(async (req, res) => {
 
     return res
         .status(201)
-        .json(apiResponse(200, "Comment successful"));
+        .json(new apiResponse(200, comment, "Comment successful"));
 });
 
 
@@ -89,10 +108,10 @@ const updateComment = asyncHandler(async (req, res) => {
   
     try {
       if (!mongoose.isValidObjectId(commentId)) {
-        throw apiError(400, "Invalid comment ID");
+        throw new apiError(400, "Invalid comment ID");
       }
   
-      const  content  = req.body;
+      const  {content}  = req.body;
   
       const updatedComment = await commentModel.findOneAndUpdate(
         {
@@ -104,14 +123,14 @@ const updateComment = asyncHandler(async (req, res) => {
       );
   
       if (!updatedComment) {
-        throw apiError(404, "Comment not found or you don't have permission to update it");
+        throw new apiError(404, "Comment not found or you don't have permission to update it");
       }
   
       return res
       .status(200)
-      .json(apiResponse(200, "Comment updated successfully", updatedComment));
+      .json(new apiResponse(200, "Comment updated successfully", updatedComment));
     } catch (error) {
-      throw apiError(error.statusCode || 500, error.message || "Internal Server Error");
+      throw new apiError(error.statusCode || 500, error.message || "Internal Server Error");
     }
   });
 
@@ -120,18 +139,18 @@ const deleteComment = asyncHandler(async (req, res) => {
     const { commentId } = req.params;
     const userId = req.user._id;
 
-    if (!mongoose.isValidObjectId(commentId) || userId) {
-        throw apiError(400, "Invalid comment ID or USER ID");
+    if (!mongoose.isValidObjectId(commentId) || !userId) {
+        throw new apiError(400, "Invalid comment ID or USER ID");
     }
 
-    await commentModel.deleteOne({
+    await commentModel.findByIdAndDelete({
         _id: commentId,
         owner: userId,
     })
 
     return res
         .status(200)
-        .json(apiResponse(200, "Comment deleted successfully"))
+        .json(new apiResponse(200, "Comment deleted successfully"))
 })
 
 
