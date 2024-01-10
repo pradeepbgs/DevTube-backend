@@ -29,10 +29,14 @@ const createTweet = asyncHandler(async (req, res) => {
 
 const getUserTweets = asyncHandler(async (req, res) => {
   // TODO: get user tweets
+  const {page=1, limit=10,} = req.query
   const { userId } = req.params;
   if (!userId || !isValidObjectId(userId)) {
      return res.status(400).json(new apiError(400, "Invalid user id") && "invalid user ID or Cant find ID");
   }
+
+  const skip = (page - 1) * limit;
+
 
   const userTweets = await Tweet.aggregate([
     {
@@ -57,6 +61,12 @@ const getUserTweets = asyncHandler(async (req, res) => {
         profilePicture: { $arrayElemAt: ["$user.avatar", 0] },
       },
     },
+    {
+      $skip: skip,
+    },
+    {
+      $limit: parseInt(limit),
+    }
   ]);
 
   if (userTweets.length === 0) {
@@ -66,9 +76,14 @@ const getUserTweets = asyncHandler(async (req, res) => {
   const allTweetsCount = await Tweet.countDocuments({ owner: userId });
 
 
-  return res
-  .status(200)
-  .json(new apiResponse(true, {userTweets,allTweetsCount},"user tweets"));
+  return res.status(200).json(
+    new apiResponse(
+       200,
+      { userTweets, allTweetsCount, page, totalPages: Math.ceil(allTweetsCount / limit) },
+       "User tweets",
+    )
+  );
+
 });
 
 const updateTweet = asyncHandler(async (req, res) => {

@@ -110,7 +110,6 @@ const loginUser = asyncHandler(async(req, res) => {
     // send response if its logged in
 
     const {username, email, password} = req.body
-    console.log("this is req.body = ",req.body)
 
     if(!(username || email)){
       throw new apiError(400,"Username or email is required")

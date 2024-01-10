@@ -14,18 +14,18 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
         throw new apiError(400,"Invalid video id")
     }
     const authenticatedId = req.user;
-    const tweeted = await Like.create({
+    const liked = await Like.create({
         video: videoId,
         likedBy: authenticatedId?._id
     })
     
-    if(!tweeted){
+    if(!liked){
         throw new apiError(400,"Unable to like video")
     }
 
     return res
     .status(200)
-    .json(apiResponse(200, "Like toggled"))
+    .json(new apiResponse(200, "Like toggled"))
 })
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
@@ -49,7 +49,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 
     return res
     .status(200)
-    .json(apiResponse(200, "liked comment"))
+    .json(new apiResponse(200, "liked comment"))
 
 })
 
@@ -76,7 +76,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 
     return res
     .status(200)
-    .json(apiResponse(200, "liked tweet"))
+    .json(new apiResponse(200, "liked tweet"))
 
 }
 )
@@ -90,7 +90,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     const likedVideos = await Like.aggregate([
         {
             $match: {
-                likedBy: mongoose.Types.ObjectId(authenticatedId?._id)
+                likedBy: new mongoose.Types.ObjectId(authenticatedId?._id)
             }
         },
         {
@@ -105,7 +105,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
 
     return res
     .status(200)
-    .json(apiResponse(200, likedVideos[0] ,"liked videos"))
+    .json(new apiResponse(200, likedVideos[0] ,"liked videos"))
 
 })
 

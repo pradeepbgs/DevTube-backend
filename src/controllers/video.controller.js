@@ -4,42 +4,39 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import videoModel from "../models/video.model.js";
 import { apiResponse } from "../utils/apiResponce.js";
 import { cleanUploadedfiles } from "../utils/cleanup.videoFiles.js";
-
+import * as mongoose from "mongoose";
 
 const getAllVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
+  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
   //TODO: get all videos based on query, sort, pagination
 
-    try {
-
-      const validSortFields = ['createdAt','title']
-      const validSortTypes = ['asc','desc']
-      if(sortBy && !validSortFields.includes(sortBy)) {
-        throw new apiError('Invalid sort field',400)
-      }
-      if(sortType && !validSortTypes.includes(sortType)) {
-        throw new apiError('Invalid sort type',400)
-      }
-
-      const queryObj = query ? {
-        title: {$regex: new RegExp(query,'i')}
-      }: {}
-
-      const videos = await videoModel
-      .find(queryObj)
-      .sort({ [sortBy]: sortType === 'desc' ? -1 : 1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-
-      return res.status(200).json(new apiResponse(videos, "success", 200));
-
-    } catch (error) {
-      return res
-      .status(400)
-      .json(new apiError(error.message, error.statusCode));
+  try {
+    const validSortFields = ["createdAt", "title"];
+    const validSortTypes = ["asc", "desc"];
+    if (sortBy && !validSortFields.includes(sortBy)) {
+      throw new apiError("Invalid sort field", 400);
+    }
+    if (sortType && !validSortTypes.includes(sortType)) {
+      throw new apiError("Invalid sort type", 400);
     }
 
-})
+    const queryObj = query
+      ? {
+          title: { $regex: new RegExp(query, "i") },
+        }
+      : {};
+
+    const videos = await videoModel
+      .find(queryObj)
+      .sort({ [sortBy]: sortType === "desc" ? -1 : 1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    return res.status(200).json(new apiResponse(videos, "success", 200));
+  } catch (error) {
+    return res.status(400).json(new apiError(error.message, error.statusCode));
+  }
+});
 
 const videoUpload = asyncHandler(async (req, res) => {
   const user = req.user;
@@ -66,7 +63,6 @@ const videoUpload = asyncHandler(async (req, res) => {
     ) {
       thumbnail = req.files.thumbnail[0].path;
     }
-
 
     if (!user) return res.status(401).json(new apiError(401, "user not found"));
     if ([title, description].some((field) => field?.trim() === "")) {
@@ -112,30 +108,60 @@ const videoUpload = asyncHandler(async (req, res) => {
 const videoDetails = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
-  try {
-    if (!videoId) {
-      throw new apiError(401, "cant find video id");
+  const videoDeatils = await videoModel.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(videoId),
+      }
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "video",
+        as: "likes",
+      },
+    },
+    {
+      $lookup: {
+        from: "comments",
+        localField: "_id",
+        foreignField: "video",
+        as: "comments",
+      }
+    },
+    {
+      $addFields: {
+        likesCount: { $size: "$likes" },
+        commentsCount: { $size: "$comments" },
+      }
+    },
+    {
+      $project: {
+        title: 1,
+        description: 1,
+        thumbnail: 1,
+        videoFile: 1,
+        likesCount: 1,
+        commentsCount: 1,
+        owner: 1,
+        comments: 1,
+        createdAt: 1,
+        views: 1,
+        isPublished: 1,
+        duration: 1,
+      }
     }
+  ]);
 
-    const video = await videoModel.findById(videoId);
-    if (!video) {
-      throw new apiError(401, "video not found");
-    }
-
-    return res
-      .status(200)
-      .json(new apiResponse(200, video, "video details fetched successfully"));
-  } catch (error) {
-    console.log("error in video.controller.js on videoDeatils controller");
-    return res
-      .status(400)
-      .json(
-        new apiError(
-          401,
-          "error while fetching video details or maybe video is deleted"
-        )
-      );
+  if(videoDeatils.length === 0) {
+    throw new apiError(401, "video not found");
   }
+
+  return res
+    .status(200)
+    .json(new apiResponse(200,videoDeatils[0],"success"));
+
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
@@ -145,15 +171,13 @@ const updateVideo = asyncHandler(async (req, res) => {
   if (!videoId) {
     throw new apiError(401, "cant find video id");
   }
-  
+
   const authenticatedId = req.user?._id;
   if (!authenticatedId) {
     throw new apiError(401, "user not found");
   }
 
-
   try {
-
     const video = await videoModel.findOne({
       _id: videoId,
       owner: authenticatedId,
@@ -192,10 +216,7 @@ const updateVideo = asyncHandler(async (req, res) => {
         new apiResponse(200, sendResData, "video details updated successfully")
       );
   } catch (error) {
-    throw new apiError(
-      401,
-      "error  updating video's details" + error.message
-    );
+    throw new apiError(401, "error  updating video's details" + error.message);
   }
 });
 
