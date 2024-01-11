@@ -2,106 +2,83 @@ import { apiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Subscription as subscriptionModel} from "../models/subscription.model.js";
 import { apiResponse } from "../utils/apiResponce.js";
+import mongoose from "mongoose";
 
-const subscriber  = asyncHandler(async (req, res) => {
-    // get the user who is trying to subscribe
-    // get the channel whom he is trying to
-    // check if the user is already subscribed to the channel
-    // if yes, then return error
-    // if no, then create a new subscription
-    // return the subscription
 
-    // this the one who wants to subscribe a channel
+const toggleSubscription = asyncHandler(async (req, res) => {
+    // TODO: toggle subscription
+    const {channelId} = req.params
     const user = req.user;
-    const {channelId} = req.params;
-    try {
-        if(!user){
-            throw new apiError(401, "user not found")
-        }
-
-        if(!channelId){
-            throw new apiError(401, "channel not found")
-        }
-
-        // check if the user is already subscribed to the channel
-
-        const existingSubscription = await subscriptionModel.findOne({
-            user: user._id,
-            channel: channelId,
-        })
-
-        if(existingSubscription){
-            throw new apiError(401, "user is already subscribed to the channel")
-        }
-
-
-        // after checking the user is not subscribed to the channel, we are now letting him subscribe now
-        const subscription = await subscriptionModel.create({
-            user: user._id,
-            channel: req.params.channelId,
-        })
-
-        return res
-        .status(200)
-        .json(
-            new apiResponse(
-                200,
-                subscription,
-                "subscription successfull"
-            )
-        )
-    } catch (error) {
-        throw new apiError(401, "error while subscribing")
+    if(!user){
+        throw new apiError(401, "user not found")
     }
+    if(!mongoose.isValidObjectId(channelId) || !channelId){
+        throw new apiError(401, "channel not found")
+    }
+
+    const existingSubscription = await subscriptionModel.findOneAndDelete({
+        subscriber: user?._id,
+        channel: channelId
+    })
+    
+    let message = ""
+    let newsubscription = null;
+
+    if(existingSubscription){
+        message = "unsubscribed successfully"
+    } else{
+       newsubscription =  await subscriptionModel.create({
+            subscriber:user?._id,
+            channel: channelId
+        })
+        message = "subscribed successfully"
+    }
+
+
+    return res
+           .status(200)
+           .json(
+            new apiResponse(
+                200, 
+                newsubscription,
+                message
+            )
+           ) 
 
 })
 
-const unsubscribe = asyncHandler(async (req, res) => {
-    // get the user
-    // get the channel
-    // delete the subscription
-    // return the res
 
-    const user = req.user;
-    const {channelId} = req.params;
+const getUserChannelSubscribers = asyncHandler(async (req, res) => {
+    const {channelId} = req.params
 
-    try {
-        if(!user){
-            throw new apiError(401, "user not found")
+    const subscribers = await subscriptionModel.aggregate([
+        {
+            $match: {
+                channel: new mongoose.Types.ObjectId(channelId)
+            }
+        },
+        {
+            $project: {
+                subscriber: 1,
+            }
         }
-        if(!channelId){
-            throw new apiError(401, "channel not found")
-        }
+    ])
 
-       const subscription =   await subscriptionModel.findOneAndDelete({
-            user: user._id,
-            channel: channelId,
-        })
-
-        if(!subscription){
-            throw new apiError(401, "user is not subscribed to the channel")
-        }
-
-        return res
-        .status(200)
-        .json(
-            new apiResponse(
-                200,
-                subscription,
-                "unsubscription successfull"
-            )
-        )
-
-    } catch (error) {
-        throw new apiError(401, "error while unsubscribing")
+    if(subscribers.length === 0){
+        throw new apiError(400, "cant find subscribers")
     }
+
+    return res.status(200).json(new apiResponse(200, subscribers[0], "user subscribers fetched successfully"))
 })
 
 
-
+const getSubscribedChannels = asyncHandler(async (req, res) => {
+    const { subscriberId } = req.params
+})
 
 
 export {
-    subscriber,
-    unsubscribe,
+    toggleSubscription,
+    getSubscribedChannels,
+    getUserChannelSubscribers
 }
