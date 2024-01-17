@@ -6,6 +6,7 @@ import { apiResponse } from "../utils/apiResponce.js";
 import { cleanUploadedfiles } from "../utils/cleanup.videoFiles.js";
 import * as mongoose from "mongoose";
 
+
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
   //TODO: get all videos based on query, sort, pagination
@@ -32,11 +33,12 @@ const getAllVideos = asyncHandler(async (req, res) => {
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
-    return res.status(200).json(new apiResponse(videos, "success", 200));
+    return res.status(200).json(new apiResponse(200, videos, "sucess"));
   } catch (error) {
     return res.status(400).json(new apiError(error.message, error.statusCode));
   }
 });
+
 
 const videoUpload = asyncHandler(async (req, res) => {
   const user = req.user;
@@ -104,9 +106,11 @@ const videoUpload = asyncHandler(async (req, res) => {
       .json(new apiError(401, error.message && "error while uploading video"));
   }
 });
+ 
 
 const videoDetails = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+  const {user} = req.user
 
   const videoDeatils = await videoModel.aggregate([
     {
@@ -114,6 +118,34 @@ const videoDetails = asyncHandler(async (req, res) => {
         _id: new mongoose.Types.ObjectId(videoId),
       }
     },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $lookup: {
+              from : 'subscription',
+              localField: '_id',
+              foreignField: 'channel',
+              as: 'subscribers',
+            }
+          },
+          {
+            $project: {
+              fullname: 1,
+              username: 1,
+              avatar: 1,
+            }
+          }
+        ]
+      }
+    },
+    // {
+    //   $unwind: "$owner",
+    // },
     {
       $lookup: {
         from: "likes",
@@ -132,9 +164,18 @@ const videoDetails = asyncHandler(async (req, res) => {
     },
     {
       $addFields: {
-        likesCount: { $size: "$likes" },
-        commentsCount: { $size: "$comments" },
-      }
+        owner: { $arrayElemAt: ["$owner", 0] },
+        likesCount: { $size: { $ifNull: ["$likes", []] } },
+        commentsCount: { $size: { $ifNull: ["$comments", []] } },
+        subscribersCount: { $size: { $ifNull: ["$owner.subscribers", []] } },
+        isSubscribed : {
+          $cond: {
+            if: {$in: [req.user?._id, "$owner.subscribers"]},
+            then: true,
+            else: false
+          }
+       }
+      },
     },
     {
       $project: {
@@ -142,9 +183,15 @@ const videoDetails = asyncHandler(async (req, res) => {
         description: 1,
         thumbnail: 1,
         videoFile: 1,
+        owner: {
+          fullname: 1,
+          username: 1,
+          avatar: 1,
+        },
+        isSubscribed: 1,
         likesCount: 1,
         commentsCount: 1,
-        owner: 1,
+        subscribersCount: 1,
         comments: 1,
         createdAt: 1,
         views: 1,
@@ -163,6 +210,7 @@ const videoDetails = asyncHandler(async (req, res) => {
     .json(new apiResponse(200,videoDeatils[0],"success"));
 
 });
+
 
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -220,6 +268,7 @@ const updateVideo = asyncHandler(async (req, res) => {
   }
 });
 
+
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   try {
@@ -244,6 +293,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
     throw new apiError(401, "error while deleting video" + error.message);
   }
 });
+
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -281,6 +331,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     return res.status(400).json(new apiError(400, error.message));
   }
 });
+
 
 export {
   videoUpload,
