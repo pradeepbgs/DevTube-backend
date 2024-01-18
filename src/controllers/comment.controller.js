@@ -80,7 +80,7 @@ const addComment = asyncHandler(async (req, res) => {
     }
 
     const {content} = req.body; 
-    console.log(content);
+
     if (!content) {
         throw new apiError(400, "Comment text is required");
     }

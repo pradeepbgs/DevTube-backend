@@ -31,7 +31,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
       .find(queryObj)
       .sort({ [sortBy]: sortType === "desc" ? -1 : 1 })
       .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit).populate("owner", "fullname username  avatar coverImage");
 
     return res.status(200).json(new apiResponse(200, videos, "sucess"));
   } catch (error) {
@@ -113,10 +113,7 @@ const videoDetails = asyncHandler(async (req, res) => {
   const {user} = req.user
 
   const videoDeatils = await videoModel.aggregate([
-    {
-      $match: {
-        _id: new mongoose.Types.ObjectId(videoId),
-      }
+    { $match: { _id: new mongoose.Types.ObjectId(videoId), }
     },
     {
       $lookup: {
@@ -124,28 +121,16 @@ const videoDetails = asyncHandler(async (req, res) => {
         localField: "owner",
         foreignField: "_id",
         as: "owner",
-        pipeline: [
-          {
-            $lookup: {
-              from : 'subscription',
-              localField: '_id',
-              foreignField: 'channel',
-              as: 'subscribers',
-            }
-          },
-          {
-            $project: {
-              fullname: 1,
-              username: 1,
-              avatar: 1,
-            }
-          }
-        ]
       }
     },
-    // {
-    //   $unwind: "$owner",
-    // },
+    {
+      $lookup: {
+        from : 'subscriptions',
+        localField: 'owner._id',
+        foreignField: 'channel',
+        as: 'subscribers',
+      }
+    },
     {
       $lookup: {
         from: "likes",
@@ -160,6 +145,34 @@ const videoDetails = asyncHandler(async (req, res) => {
         localField: "_id",
         foreignField: "video",
         as: "comments",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "commentOwner",
+            }
+          },
+          {
+            $addFields:{
+              owner: {
+                $arrayElemAt: ["$commentOwner", 0]
+              }
+            }
+          },
+          {
+            $project: {
+              content: 1,
+              createdAt: 1,
+              owner: {
+                fullname: 1,
+                username: 1, 
+                avatar: 1
+              }
+            } 
+          }
+        ]
       }
     },
     {
@@ -167,14 +180,15 @@ const videoDetails = asyncHandler(async (req, res) => {
         owner: { $arrayElemAt: ["$owner", 0] },
         likesCount: { $size: { $ifNull: ["$likes", []] } },
         commentsCount: { $size: { $ifNull: ["$comments", []] } },
-        subscribersCount: { $size: { $ifNull: ["$owner.subscribers", []] } },
+        subscribersCount: { $size: { $ifNull: ["$subscribers", []] } },
         isSubscribed : {
           $cond: {
-            if: {$in: [req.user?._id, "$owner.subscribers"]},
+            if: {$in: [req.user?._id, "$subscribers.subscriber"]},
             then: true,
             else: false
           }
-       }
+       },
+       
       },
     },
     {
@@ -184,6 +198,7 @@ const videoDetails = asyncHandler(async (req, res) => {
         thumbnail: 1,
         videoFile: 1,
         owner: {
+          _id: 1,
           fullname: 1,
           username: 1,
           avatar: 1,
@@ -192,7 +207,7 @@ const videoDetails = asyncHandler(async (req, res) => {
         likesCount: 1,
         commentsCount: 1,
         subscribersCount: 1,
-        comments: 1,
+       comments: 1,
         createdAt: 1,
         views: 1,
         isPublished: 1,
