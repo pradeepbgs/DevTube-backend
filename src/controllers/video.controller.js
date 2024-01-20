@@ -110,7 +110,7 @@ const videoUpload = asyncHandler(async (req, res) => {
 
 const videoDetails = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const {user} = req.user
+  const user = req.user
 
   const videoDeatils = await videoModel.aggregate([
     { $match: { _id: new mongoose.Types.ObjectId(videoId), }
@@ -140,50 +140,13 @@ const videoDetails = asyncHandler(async (req, res) => {
       },
     },
     {
-      $lookup: {
-        from: "comments",
-        localField: "_id",
-        foreignField: "video",
-        as: "comments",
-        pipeline: [
-          {
-            $lookup: {
-              from: "users",
-              localField: "owner",
-              foreignField: "_id",
-              as: "commentOwner",
-            }
-          },
-          {
-            $addFields:{
-              owner: {
-                $arrayElemAt: ["$commentOwner", 0]
-              }
-            }
-          },
-          {
-            $project: {
-              content: 1,
-              createdAt: 1,
-              owner: {
-                fullname: 1,
-                username: 1, 
-                avatar: 1
-              }
-            } 
-          }
-        ]
-      }
-    },
-    {
       $addFields: {
         owner: { $arrayElemAt: ["$owner", 0] },
         likesCount: { $size: { $ifNull: ["$likes", []] } },
-        commentsCount: { $size: { $ifNull: ["$comments", []] } },
         subscribersCount: { $size: { $ifNull: ["$subscribers", []] } },
         isSubscribed : {
           $cond: {
-            if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+            if: {$in: [user?._id, "$subscribers.subscriber"]},
             then: true,
             else: false
           }
@@ -205,9 +168,7 @@ const videoDetails = asyncHandler(async (req, res) => {
         },
         isSubscribed: 1,
         likesCount: 1,
-        commentsCount: 1,
         subscribersCount: 1,
-       comments: 1,
         createdAt: 1,
         views: 1,
         isPublished: 1,

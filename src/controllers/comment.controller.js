@@ -9,7 +9,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
 
   if (!mongoose.isValidObjectId(videoId)) {
-      throw apiError(400, "Invalid video id");
+    return res.status(400).json(new apiError(400, "Invalid video id"));
   }
 
   const result = await commentModel.aggregate([
@@ -27,8 +27,10 @@ const getVideoComments = asyncHandler(async (req, res) => {
               pipeline: [
                   {
                       $project: {
+                          _id: 1,
                           username: 1,
                           avatar: 1,
+                          fullname: 1,
                       }
                   },
                   {
@@ -51,8 +53,10 @@ const getVideoComments = asyncHandler(async (req, res) => {
       {
           $project: {
               content: 1,
+              "owner._id": 1,
               "owner.username": 1,
               "owner.avatar": 1,
+              "owner.fullname": 1,
           },
       },
   ]);
@@ -63,19 +67,17 @@ const getVideoComments = asyncHandler(async (req, res) => {
 
   return res
       .status(200)
-      .json(new apiResponse(200, "Comments found", result));
-
-
-
+      .json(new apiResponse(200, result, "successfully fetched comments"));
 });
 
 
 const addComment = asyncHandler(async (req, res) => {
     // TODO: add a comment to a video
     const { videoId } = req.params;
-    const userId = req.user;
+    const userId = req.user._id;
 
-    if (!mongoose.isValidObjectId(videoId) || !req.user._id) {
+
+    if (!mongoose.isValidObjectId(videoId) || !userId) {
         throw new apiError(400, "Invalid video id or user id");
     }
 
