@@ -6,7 +6,6 @@ import { apiResponse } from "../utils/apiResponce.js";
 import { cleanUploadedfiles } from "../utils/cleanup.videoFiles.js";
 import * as mongoose from "mongoose";
 
-
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
   //TODO: get all videos based on query, sort, pagination
@@ -31,11 +30,81 @@ const getAllVideos = asyncHandler(async (req, res) => {
       .find(queryObj)
       .sort({ [sortBy]: sortType === "desc" ? -1 : 1 })
       .limit(limit * 1)
-      .skip((page - 1) * limit).populate("owner", "fullname username  avatar coverImage");
+      .skip((page - 1) * limit)
+      .populate("owner", "fullname username  avatar coverImage");
 
     return res.status(200).json(new apiResponse(200, videos, "sucess"));
   } catch (error) {
     return res.status(400).json(new apiError(error.message, error.statusCode));
+  }
+});
+
+const getUserVideos = asyncHandler(async (req, res) => {
+  try {
+
+    const { page = 1, limit = 10 } = req.query;
+    const { userId } = req.params;
+
+    if(!mongoose.isValidObjectId(userId)){
+      throw new apiError("Invalid user id", 400)
+    }
+
+    const videos = await videoModel.aggregate([
+      {
+        $match: {
+          owner: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $skip: (page - 1) * limit,
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "owner",
+          foreignField: "_id",
+          as: "owner",
+        },
+      },
+      {
+        $addFields: {
+          owner: { $arrayElemAt: ["$owner", 0] },
+        },
+      },
+      {
+        $project: {
+          title: 1,
+          description: 1,
+          videoFile: 1,
+          thumbnail: 1,
+          createdAt: 1,
+          owner: {
+            _id: 1,
+            username: 1,
+            fullname: 1,
+            avatar: 1,
+            coverImage: 1,
+          },
+        },
+      },
+    ]);
+
+    if (videos.length === 0) {
+      console.log("No videos found for userId:", userId);
+      return res.status(200).json(new apiResponse(200, videos, "success"));
+    }
+
+
+    return res
+    .status(200)
+    .json(new apiResponse(200, videos, "success"));
+
+
+  } catch (error) {
+
+    console.error("Error fetching user videos:", error);
+    return res.status(500).json(new apiResponse(500, null, "Internal Server Error"));
+  
   }
 });
 
@@ -106,30 +175,28 @@ const videoUpload = asyncHandler(async (req, res) => {
       .json(new apiError(401, error.message && "error while uploading video"));
   }
 });
- 
 
 const videoDetails = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const user = req.user
+  const user = req.user;
 
   const videoDeatils = await videoModel.aggregate([
-    { $match: { _id: new mongoose.Types.ObjectId(videoId), }
-    },
+    { $match: { _id: new mongoose.Types.ObjectId(videoId) } },
     {
       $lookup: {
         from: "users",
         localField: "owner",
         foreignField: "_id",
         as: "owner",
-      }
+      },
     },
     {
       $lookup: {
-        from : 'subscriptions',
-        localField: 'owner._id',
-        foreignField: 'channel',
-        as: 'subscribers',
-      }
+        from: "subscriptions",
+        localField: "owner._id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
     },
     {
       $lookup: {
@@ -144,14 +211,13 @@ const videoDetails = asyncHandler(async (req, res) => {
         owner: { $arrayElemAt: ["$owner", 0] },
         likesCount: { $size: { $ifNull: ["$likes", []] } },
         subscribersCount: { $size: { $ifNull: ["$subscribers", []] } },
-        isSubscribed : {
+        isSubscribed: {
           $cond: {
-            if: {$in: [user?._id, "$subscribers.subscriber"]},
+            if: { $in: [user?._id, "$subscribers.subscriber"] },
             then: true,
-            else: false
-          }
-       },
-       
+            else: false,
+          },
+        },
       },
     },
     {
@@ -173,20 +239,16 @@ const videoDetails = asyncHandler(async (req, res) => {
         views: 1,
         isPublished: 1,
         duration: 1,
-      }
-    }
+      },
+    },
   ]);
 
-  if(videoDeatils.length === 0) {
+  if (videoDeatils.length === 0) {
     throw new apiError(401, "video not found");
   }
 
-  return res
-    .status(200)
-    .json(new apiResponse(200,videoDeatils[0],"success"));
-
+  return res.status(200).json(new apiResponse(200, videoDeatils[0], "success"));
 });
-
 
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -244,8 +306,7 @@ const updateVideo = asyncHandler(async (req, res) => {
   }
 });
 
-
-const deleteVideo = asyncHandler(async (req, res) => {
+const deleteVideo = asyncHandler(async (req, res) => { 
   const { videoId } = req.params;
   try {
     if (!videoId) {
@@ -269,7 +330,6 @@ const deleteVideo = asyncHandler(async (req, res) => {
     throw new apiError(401, "error while deleting video" + error.message);
   }
 });
-
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -308,7 +368,6 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
   }
 });
 
-
 export {
   videoUpload,
   updateVideo,
@@ -316,4 +375,5 @@ export {
   videoDetails,
   togglePublishStatus,
   getAllVideos,
+  getUserVideos,
 };
