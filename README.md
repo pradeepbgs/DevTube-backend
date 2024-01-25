@@ -42,5 +42,4 @@ My YouTube-like app is a platform where users can upload, watch, and interact wi
 
 1. Clone the repository:
 
-   ```bash
-   git clone https://github.com/your-username/your-repo.git
+  
