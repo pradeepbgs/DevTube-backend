@@ -53,13 +53,22 @@ const getUserTweets = asyncHandler(async (req, res) => {
       },
     },
     {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "tweet",
+        as: "likes",
+      }
+    },
+    {
       $project: {
         content: 1,
         createdAt: 1,
         owner: 1,
+        likesCount: { $size: "$likes" },
         username: { $arrayElemAt: ["$user.username", 0] },
         profilePicture: { $arrayElemAt: ["$user.avatar", 0] },
-      },
+      }, 
     },
     {
       $skip: skip,
