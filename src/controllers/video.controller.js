@@ -128,12 +128,13 @@ const videoUpload = asyncHandler(async (req, res) => {
 
     let thumbnail;
     if (
-      req.files &&
+      req.files && 
       Array.isArray(req.files.thumbnail) &&
       req.files.thumbnail.length > 0
     ) {
       thumbnail = req.files.thumbnail[0].path;
     }
+  
 
     if (!user) return res.status(401).json(new apiError(401, "user not found"));
     if ([title, description].some((field) => field?.trim() === "")) {
@@ -170,9 +171,7 @@ const videoUpload = asyncHandler(async (req, res) => {
     console.log(
       "error in video.controller.js on videoupload controller" + error
     );
-    return res
-      .status(500)
-      .json(new apiError(401, error.message && "error while uploading video"));
+    throw new apiError(401, error.message && "error while uploading video");
   }
 });
 
