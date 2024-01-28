@@ -1,51 +1,40 @@
-import express from 'express';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
-import bodyparser from 'body-parser';
+import express from 'express'
+import cors from 'cors'
+import cookieParser from 'cookie-parser'
+import bodyparser from 'body-parser'
+const app = express()
 
-const app = express();
+app.use(cors({
+    origin: 'https://fsvideo.vercel.app/',
+    credentials: true
+}))
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests from localhost during development
-      if (!origin || origin === 'http://localhost:5173') {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-  })
-);
+app.use(bodyparser.json())
+app.use(express.json({limit: '16kb'}))
+app.use(express.urlencoded({extended: true, limit:'16kb'}))
+app.use(express.static('public'))
+app.use(cookieParser())
 
-app.use(bodyparser.json());
-app.use(express.json({ limit: '16kb' }));
-app.use(express.urlencoded({ extended: true, limit: '16kb' }));
-app.use(express.static('public'));
-app.use(cookieParser());
+// routes import
 
-// Routes import
+import userRouter from './routes/user.routes.js'
+import videoRouter from './routes/video.routes.js'
+import commentRouter from './routes/comment.routes.js'
+import subscriptionRouter from './routes/susbcription.routes.js'
+import tweetRouter from './routes/tweet.routes.js'
+import playlistRouter from './routes/playlist.routes.js'
+import likesRouter from './routes/like.routes.js'
+import healthcheckRouter from './routes/healthcheck.routes.js'
+import dashboardRouter from './routes/dashboard.routes.js'
 
-import userRouter from './routes/user.routes.js';
-import videoRouter from './routes/video.routes.js';
-import commentRouter from './routes/comment.routes.js';
-import subscriptionRouter from './routes/susbcription.routes.js';
-import tweetRouter from './routes/tweet.routes.js';
-import playlistRouter from './routes/playlist.routes.js';
-import likesRouter from './routes/like.routes.js';
-import healthcheckRouter from './routes/healthcheck.routes.js';
-import dashboardRouter from './routes/dashboard.routes.js';
-
-// Route declaration
-app.use('/api/v1/users', userRouter);
-app.use('/api/v1/videos', videoRouter);
-app.use('/api/v1/comments', commentRouter);
-app.use('/api/v1/subscriptions', subscriptionRouter);
-app.use('/api/v1/tweets', tweetRouter);
-app.use('/api/v1/playlists', playlistRouter);
-app.use('/api/v1/likes', likesRouter);
-app.use('/api/v1/healthcheck', healthcheckRouter);
-app.use('/api/v1/dashboard', dashboardRouter);
-
-export default app;
+// route declaration
+app.use('/api/v1/users', userRouter)
+app.use('/api/v1/videos', videoRouter)
+app.use('/api/v1/comments', commentRouter)
+app.use('/api/v1/subscriptions', subscriptionRouter)
+app.use('/api/v1/tweets',tweetRouter)
+app.use('/api/v1/playlists', playlistRouter)
+app.use('/api/v1/likes', likesRouter)
+app.use("/api/v1/healthcheck", healthcheckRouter)
+app.use("/api/v1/dashboard", dashboardRouter)
+export default app
