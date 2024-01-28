@@ -5,7 +5,7 @@ import bodyparser from 'body-parser'
 const app = express()
 
 app.use(cors({
-    origin: 'http://localhost:3000/',
+    origin: 'https://fsvideo.vercel.app',
     credentials: true
 }))
 
