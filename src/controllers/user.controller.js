@@ -134,9 +134,11 @@ const loginUser = asyncHandler(async(req, res) => {
    .select("-password -refreshToken")
 
    const options = {
-     httpOnly: true,
+     domain: 'https://fsvideo.vercel.app',
      secure: true,
-     sameSite: "none",  
+     sameSite: "none",
+     path: '/',
+     expires: 1/86400  
    }
 
    return res.status(200)
