@@ -7,7 +7,6 @@ const app = express()
 app.use(cors({
     origin: 'https://fsvideo.vercel.app',
     credentials: true,
-    exposedHeaders: ["Set-cookie"],
 }))
 
 app.use(bodyparser.json())
