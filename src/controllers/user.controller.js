@@ -381,6 +381,8 @@ const updateUserCoverImage = asyncHandler( async (req, res) => {
       error?.message || "Error while updating Cover image "
     )
   }
+
+
 })
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
