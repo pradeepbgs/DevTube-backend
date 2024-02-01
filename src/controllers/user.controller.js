@@ -137,7 +137,6 @@ const loginUser = asyncHandler(async(req, res) => {
      httpOnly: true,
      secure: true,
      sameSite: "none",  
-     domain: "https://fsvideo.vercel.app"
    }
 
    return res.status(200)
