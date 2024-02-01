@@ -137,7 +137,7 @@ const loginUser = asyncHandler(async(req, res) => {
      httpOnly: true,
      secure: true,
      sameSite: "none",  
-     expires: new Date(Date.now() + 604800000),
+     domain: "https://fsvideo.vercel.app"
    }
 
    return res.status(200)
