@@ -2,9 +2,9 @@ import {v2 as cloudinary} from 'cloudinary';
 import fs from 'fs';
 
 cloudinary.config({ 
-    cloud_name: "chai-with-backend", 
-    api_key: 881654414367555, 
-    api_secret: 'tqqkCQ7jCufbwwuhx_mMxD4cTu0'
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+    api_key: process.env.CLOUDINARY_API_KEY, 
+    api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 
 
@@ -26,5 +26,23 @@ cloudinary.config({
     }
  }
 
+ const deletOnCloudanry = async (publicId)=>{
+    try {
+        const response = await cloudinary.uploader.destroy(publicId)
+        return response;
+    } catch (error) {
+        return null;
+    } 
+   
+ }
 
- export {uploadOnCloudinary}
+ const getPublicId = (url) =>{
+    const publicId = url.split('/').pop().split('.')[0]
+    return publicId; 
+ }
+
+ export {
+    uploadOnCloudinary,
+    deletOnCloudanry,
+    getPublicId,
+}

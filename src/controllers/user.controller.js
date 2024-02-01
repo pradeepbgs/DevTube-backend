@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {apiError} from "../utils/apiError.js";
 import {User} from "../models/user.model.js"
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deletOnCloudanry, getPublicId, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { apiResponse } from "../utils/apiResponce.js";
 import fs from "fs";
 import jwt from 'jsonwebtoken'
@@ -298,15 +298,28 @@ const updateUserAvatar = asyncHandler( async (req, res) => {
    try {
  
     if(!avatarLocalpath) return new apiError(400, "Avatar file is missing")
+
+    const currentUser = await User.findById(req.user?._id)
+
+    if (!currentUser) {
+      throw new apiError(404, "User not found")
+    }
+
+    const publicId = getPublicId(currentUser.avatar)
+    
  
     const avatar = await uploadOnCloudinary(avatarLocalpath)
     if(!avatar.url) return new apiError(400, "Error while uploading on cloudinary, user.controller.js line no 299")
     
-    const user = await User.findByIdAndUpdate(req.user?._id, {
-      $set: {
-        avatar: avatar.url
-      }
-    }).select('-password')
+    const user = await User.findByIdAndUpdate(
+      req.user?._id,
+      { $set: { avatar: avatar.url } },
+      { new: true, select: '-password' }
+    )
+
+    if(user){
+      deletOnCloudanry(publicId)
+    }
  
     return res
    .status(200)
@@ -317,44 +330,14 @@ const updateUserAvatar = asyncHandler( async (req, res) => {
        "Avatar image updated successfully"
      )
    )
+
    } catch (error) {
     throw new apiError(
       401,
       error?.message || "Error while updating Avatar image "
     )
    }
-})
 
-const updateUserCoverImage = asyncHandler( async (req, res) => {
-
-  const coverImageLocalpath =  req.file?.path
-  try {
-    if(!coverImageLocalpath) return new apiError(400, "Cover image file is missing")
-  
-    const coverImage = await uploadOnCloudinary(coverImageLocalpath)
-    if(!coverImage.url) return new apiError(400, "Error while uploading on cloudinary, user.controller.js line no 314")
-    
-    const user = await User.findByIdAndUpdate(req.user?._id, {
-      $set:{
-        coverImage: coverImage.url
-      }
-    }).select('-password')
-  
-    return res
-    .status(200)
-    .json(
-      new apiResponse(
-        200,
-        user,
-        "CoverImage updated successfully"
-      )
-    )
-  } catch (error) {
-    throw new apiError(
-      401,
-      error?.message || "Error while updating Cover image "
-    )
-  }
 })
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
