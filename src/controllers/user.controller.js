@@ -136,6 +136,7 @@ const loginUser = asyncHandler(async(req, res) => {
    const options = {
      httpOnly: true,
      secure: true,
+     sameSite: "none",  
    }
 
    return res.status(200)
@@ -344,6 +345,13 @@ const updateUserCoverImage = asyncHandler( async (req, res) => {
   const coverImageLocalpath =  req.file?.path
   try {
     if(!coverImageLocalpath) return new apiError(400, "Cover image file is missing")
+
+    const currentUser = await User.findById(req.user?._id)
+
+    if (!currentUser) {
+      throw new apiError(404, "User not found")
+    }
+    const publicId = getPublicId(currentUser.coverImage)
   
     const coverImage = await uploadOnCloudinary(coverImageLocalpath)
     if(!coverImage.url) return new apiError(400, "Error while uploading on cloudinary, user.controller.js line no 314")
@@ -353,6 +361,10 @@ const updateUserCoverImage = asyncHandler( async (req, res) => {
         coverImage: coverImage.url
       }
     }).select('-password')
+    
+    if(user){
+      deletOnCloudanry(publicId)
+    }
   
     return res
     .status(200)
@@ -518,3 +530,4 @@ export {
   getUserChannelProfile,
   getWatchHistory,    
 }
+  

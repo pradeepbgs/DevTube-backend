@@ -1,6 +1,6 @@
 import { apiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deletOnCloudanry, getPublicId, uploadOnCloudinary } from "../utils/cloudinary.js";
 import videoModel from "../models/video.model.js";
 import { apiResponse } from "../utils/apiResponce.js";
 import { cleanUploadedfiles } from "../utils/cleanup.videoFiles.js";
@@ -262,11 +262,18 @@ const updateVideo = asyncHandler(async (req, res) => {
     throw new apiError(401, "user not found");
   }
 
+ 
   try {
     const video = await videoModel.findOne({
       _id: videoId,
       owner: authenticatedId,
     });
+
+    if(!video) {
+      throw new apiError(401, "video not found")
+    }
+
+    const oldThumbnail = video.thumbnail;
 
     if (title && title.length > 0) {
       video.title = title;
@@ -284,6 +291,10 @@ const updateVideo = asyncHandler(async (req, res) => {
       }
 
       video.thumbnail = thumbnailUrl.url;
+
+      if(oldThumbnail){
+        deletOnCloudanry(getPublicId(oldThumbnail))
+      }
     }
 
     await video.save();
@@ -306,10 +317,11 @@ const updateVideo = asyncHandler(async (req, res) => {
 });
 
 const deleteVideo = asyncHandler(async (req, res) => { 
-  const { videoId } = req.params;
+  const { videoId } = req.params
+  
   try {
     if (!videoId) {
-      res.status(401).json(new apiError(401, "cant find video id"));
+      return res.status(401).json(new apiError(401, "Can't find video id"))
     }
 
     const deletedVideo = await videoModel.findOneAndDelete({
@@ -317,18 +329,22 @@ const deleteVideo = asyncHandler(async (req, res) => {
       owner: req.user?._id,
     });
 
-    if (!deletedVideo) {
-      throw new apiError(401, "video not found");
+    if (deletedVideo && deletedVideo.videoFile) {
+      deletOnCloudanry(getPublicId(deletedVideo.videoFile))
+    } else {
+      throw new apiError(401, "Video not found")
     }
-
+    
     return res
-      .status(200)
-      .json(new apiResponse(200, "video deleted successfully"));
+    .status(200)
+    .json(new apiResponse(200, "Video deleted successfully"))
+
   } catch (error) {
-    console.log("error in video.controller.js on deleteVideo controller");
-    throw new apiError(401, "error while deleting video" + error.message);
+    console.error("Error in video.controller.js on deleteVideo controller:", error)
+    throw new apiError(401, "Error while deleting video: " + error.message)
   }
 });
+
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
