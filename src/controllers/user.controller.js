@@ -137,8 +137,7 @@ const loginUser = asyncHandler(async(req, res) => {
      httpOnly: true,
      secure: true,
      sameSite: "none",  
-     path: "/",
-     maxAge: 30 * 24 * 60 * 60 * 1000,
+     expires: new Date(Date.now() + 604800000),
    }
 
    return res.status(200)
