@@ -26,5 +26,20 @@ cloudinary.config({
     }
  }
 
+ const deletOnCloudanry = async (publicId)=>{
+    try {
+        const response = await cloudinary.uploader.destroy(publicId)
+        return response;
+    } catch (error) {
+        return null;
+    } 
+   
+ }
 
- export {uploadOnCloudinary}
+ const getPublicId = (url) =>{
+    const publicId = url.split('/').pop().split('.')[0]
+    return publicId; 
+ }
+
+
+ export {uploadOnCloudinary, deletOnCloudanry, getPublicId}

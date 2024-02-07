@@ -6,7 +6,7 @@ const app = express()
 
 app.use(cors({
     origin: 'http://localhost:5173',
-    credentials: true
+    credentials: true,
 }))
 
 app.use(bodyparser.json())
@@ -37,4 +37,5 @@ app.use('/api/v1/playlists', playlistRouter)
 app.use('/api/v1/likes', likesRouter)
 app.use("/api/v1/healthcheck", healthcheckRouter)
 app.use("/api/v1/dashboard", dashboardRouter)
+
 export default app

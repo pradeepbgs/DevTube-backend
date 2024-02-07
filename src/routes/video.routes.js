@@ -14,12 +14,12 @@ import { upload } from "../middlewares/multer.middleware.js";
 
 
 const router = Router();
-router.use(verifyJwt)
+// router.use(verifyJwt)
 
 // routes for video upload
 router.route('/')
 .get(getAllVideos)
-.post(upload.fields([
+.post(verifyJwt,upload.fields([
     {
         name: 'video',
         maxCount: 1
@@ -34,11 +34,11 @@ router.route('/')
 router
     .route('/:videoId')
     .get(videoDetails)
-    .delete(deleteVideo)
-    .patch(upload.single('thumbnail'),updateVideo);
+    .delete(verifyJwt,deleteVideo)
+    .patch(verifyJwt,upload.single('thumbnail'),updateVideo);
 
 router.route('/c/:userId').get(getUserVideos)
 
-router.route('/toggle/publish/:videoId').patch(togglePublishStatus);
+router.route('/toggle/publish/:videoId').patch(verifyJwt,togglePublishStatus);
 
 export default router;

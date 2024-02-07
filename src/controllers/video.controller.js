@@ -1,6 +1,6 @@
 import { apiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deletOnCloudanry, getPublicId, uploadOnCloudinary } from "../utils/cloudinary.js";
 import videoModel from "../models/video.model.js";
 import { apiResponse } from "../utils/apiResponce.js";
 import { cleanUploadedfiles } from "../utils/cleanup.videoFiles.js";
@@ -108,7 +108,6 @@ const getUserVideos = asyncHandler(async (req, res) => {
   }
 });
 
-
 const videoUpload = asyncHandler(async (req, res) => {
   const user = req.user;
   const { title, description } = req.body;
@@ -128,12 +127,13 @@ const videoUpload = asyncHandler(async (req, res) => {
 
     let thumbnail;
     if (
-      req.files &&
+      req.files && 
       Array.isArray(req.files.thumbnail) &&
       req.files.thumbnail.length > 0
     ) {
       thumbnail = req.files.thumbnail[0].path;
     }
+  
 
     if (!user) return res.status(401).json(new apiError(401, "user not found"));
     if ([title, description].some((field) => field?.trim() === "")) {
@@ -148,6 +148,7 @@ const videoUpload = asyncHandler(async (req, res) => {
       cleanUploadedfiles(req.files);
       throw new apiError("video upload failed");
     }
+    console.log(video)
     const thumbnailUrl = await uploadOnCloudinary(thumbnail);
     if (!thumbnailUrl) {
       cleanUploadedfiles(req.files);
@@ -159,6 +160,7 @@ const videoUpload = asyncHandler(async (req, res) => {
       description,
       videoFile: video.url ?? "",
       thumbnail: thumbnailUrl.url ?? "",
+      duration: video.duration ?? 0,
       owner: user._id,
     });
 
@@ -170,9 +172,7 @@ const videoUpload = asyncHandler(async (req, res) => {
     console.log(
       "error in video.controller.js on videoupload controller" + error
     );
-    return res
-      .status(500)
-      .json(new apiError(401, error.message && "error while uploading video"));
+    throw new apiError(401, error.message && "error while uploading video");
   }
 });
 
@@ -263,11 +263,18 @@ const updateVideo = asyncHandler(async (req, res) => {
     throw new apiError(401, "user not found");
   }
 
+ 
   try {
     const video = await videoModel.findOne({
       _id: videoId,
       owner: authenticatedId,
     });
+
+    if(!video) {
+      throw new apiError(401, "video not found")
+    }
+
+    const oldThumbnail = video.thumbnail;
 
     if (title && title.length > 0) {
       video.title = title;
@@ -285,6 +292,10 @@ const updateVideo = asyncHandler(async (req, res) => {
       }
 
       video.thumbnail = thumbnailUrl.url;
+
+      if(oldThumbnail){
+        deletOnCloudanry(getPublicId(oldThumbnail))
+      }
     }
 
     await video.save();
@@ -307,10 +318,11 @@ const updateVideo = asyncHandler(async (req, res) => {
 });
 
 const deleteVideo = asyncHandler(async (req, res) => { 
-  const { videoId } = req.params;
+  const { videoId } = req.params
+  
   try {
     if (!videoId) {
-      res.status(401).json(new apiError(401, "cant find video id"));
+      return res.status(401).json(new apiError(401, "Can't find video id"))
     }
 
     const deletedVideo = await videoModel.findOneAndDelete({
@@ -318,16 +330,19 @@ const deleteVideo = asyncHandler(async (req, res) => {
       owner: req.user?._id,
     });
 
-    if (!deletedVideo) {
-      throw new apiError(401, "video not found");
+    if (deletedVideo && deletedVideo.videoFile) {
+      deletOnCloudanry(getPublicId(deletedVideo.videoFile))
+    } else {
+      throw new apiError(401, "Video not found")
     }
-
+    
     return res
-      .status(200)
-      .json(new apiResponse(200, "video deleted successfully"));
+    .status(200)
+    .json(new apiResponse(200, "Video deleted successfully"))
+
   } catch (error) {
-    console.log("error in video.controller.js on deleteVideo controller");
-    throw new apiError(401, "error while deleting video" + error.message);
+    console.error("Error in video.controller.js on deleteVideo controller:", error)
+    throw new apiError(401, "Error while deleting video: " + error.message)
   }
 });
 
@@ -368,6 +383,8 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
   }
 });
 
+
+
 export {
   videoUpload,
   updateVideo,
@@ -376,4 +393,4 @@ export {
   togglePublishStatus,
   getAllVideos,
   getUserVideos,
-};
+}
