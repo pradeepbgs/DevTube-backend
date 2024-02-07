@@ -19,6 +19,11 @@ const getVideoComments = asyncHandler(async (req, res) => {
           },
       },
       {
+          $sort: {
+            createdAt: -1,
+          }
+      },
+      {
           $lookup: {
               from: "users", 
               localField: "owner",
@@ -137,6 +142,7 @@ const updateComment = asyncHandler(async (req, res) => {
     }
   });
 
+  
 const deleteComment = asyncHandler(async (req, res) => {
     // TODO: delete a comment
     const { commentId } = req.params;

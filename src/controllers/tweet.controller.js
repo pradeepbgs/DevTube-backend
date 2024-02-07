@@ -29,7 +29,7 @@ const createTweet = asyncHandler(async (req, res) => {
 
 const getUserTweets = asyncHandler(async (req, res) => {
   // TODO: get user tweets
-  const {page=1, limit=10,} = req.query
+  const {page=1, limit=30,} = req.query
   const { userId } = req.params;
   if (!userId || !isValidObjectId(userId)) {
      return res.status(400).json(new apiError(400, "Invalid user id") && "invalid user ID or Cant find ID");
@@ -43,6 +43,10 @@ const getUserTweets = asyncHandler(async (req, res) => {
       $match: {
         owner: new mongoose.Types.ObjectId(userId),
       },
+    },{
+      $sort: {
+        createdAt: -1,
+      }
     },
     {
       $lookup: {
