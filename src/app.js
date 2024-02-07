@@ -5,7 +5,7 @@ import bodyparser from 'body-parser'
 const app = express()
 
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: 'https://fsvideo.vercel.app',
     credentials: true,
 }))
 
@@ -39,3 +39,4 @@ app.use("/api/v1/healthcheck", healthcheckRouter)
 app.use("/api/v1/dashboard", dashboardRouter)
 
 export default app
+

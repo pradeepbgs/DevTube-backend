@@ -2,9 +2,9 @@ import {v2 as cloudinary} from 'cloudinary';
 import fs from 'fs';
 
 cloudinary.config({ 
-    cloud_name: "chai-with-backend", 
-    api_key: 881654414367555, 
-    api_secret: 'tqqkCQ7jCufbwwuhx_mMxD4cTu0'
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+    api_key: process.env.CLOUDINARY_API_KEY, 
+    api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 
 
@@ -42,4 +42,8 @@ cloudinary.config({
  }
 
 
- export {uploadOnCloudinary, deletOnCloudanry, getPublicId}
+ export {
+    uploadOnCloudinary,
+    deletOnCloudanry,
+    getPublicId,
+}
