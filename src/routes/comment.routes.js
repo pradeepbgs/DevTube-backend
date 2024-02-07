@@ -9,13 +9,13 @@ import { verifyJwt } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.use(verifyJwt); // Apply verifyJWT middleware to all routes in this file
+// router.use(verifyJwt); // Apply verifyJWT middleware to all routes in this file
 
 router.route("/:videoId")
       .get(getVideoComments)
-      .post(addComment);
+      .post(verifyJwt,addComment);
 router.route("/c/:commentId")
-        .delete(deleteComment)
-        .patch(updateComment);
+        .delete(verifyJwt,deleteComment)
+        .patch(verifyJwt,updateComment);
 
 export default router;

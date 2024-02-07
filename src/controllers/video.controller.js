@@ -7,7 +7,7 @@ import { cleanUploadedfiles } from "../utils/cleanup.videoFiles.js";
 import * as mongoose from "mongoose";
 
 const getAllVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+  const { page = 1, limit = 20, query, sortBy, sortType, userId } = req.query;
   //TODO: get all videos based on query, sort, pagination
 
   try {
