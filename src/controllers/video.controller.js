@@ -90,7 +90,6 @@ const getUserVideos = asyncHandler(async (req, res) => {
     ]);
 
     if (videos.length === 0) {
-      console.log("No videos found for userId:", userId);
       return res.status(200).json(new apiResponse(200, videos, "success"));
     }
 
@@ -148,7 +147,7 @@ const videoUpload = asyncHandler(async (req, res) => {
       cleanUploadedfiles(req.files);
       throw new apiError("video upload failed");
     }
-    console.log(video)
+
     const thumbnailUrl = await uploadOnCloudinary(thumbnail);
     if (!thumbnailUrl) {
       cleanUploadedfiles(req.files);
@@ -161,7 +160,7 @@ const videoUpload = asyncHandler(async (req, res) => {
       videoFile: video.url ?? "",
       thumbnail: thumbnailUrl.url ?? "",
       duration: video.duration ?? 0,
-      owner: user._id,
+      owner: user?._id,
     });
 
     return res
@@ -169,9 +168,6 @@ const videoUpload = asyncHandler(async (req, res) => {
       .json(new apiResponse(201, uploadedVideo, "video uploaded successfully"));
   } catch (error) {
     cleanUploadedfiles(req.files);
-    console.log(
-      "error in video.controller.js on videoupload controller" + error
-    );
     throw new apiError(401, error.message && "error while uploading video");
   }
 });

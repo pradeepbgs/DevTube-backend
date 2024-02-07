@@ -50,11 +50,9 @@ const registerUser = asyncHandler(async(req, res) => {
 
    if(existedUser){
     fs.unlinkSync(req.files?.avatar[0].path)
-    console.log("user already exist with this  uername or email")
       throw new apiError("User already exists", 409)
    }
 
-   console.log("this is req.files = ",req.files)
   const avatarLocalpath =  req.files?.avatar[0]?.path;
 //   const coverImageLocalpath =  req.files?.coverImage[0]?.path;
 let coverImageLocalpath;
@@ -63,16 +61,13 @@ let coverImageLocalpath;
  }
 
   if(!avatarLocalpath){
-      console.log("Avatar is required line no 42")
      throw new apiError("Avatar is required", 400)
   }
 
   const avatar = await uploadOnCloudinary(avatarLocalpath)
   const coverImage = await uploadOnCloudinary(coverImageLocalpath)
-  console.log("avatar", avatar)
-  console.log("coverImage", coverImage)
+
   if(!avatar){
-      console.log("Avatar uploading problem on cloudinary line no 50") 
      throw new apiError("Avatar is required", 400)
   }
 
@@ -227,8 +222,6 @@ const changeCurrentPassword = asyncHandler( async (req, res) => {
       const {oldPassword, newPassword} = req.body
 
       const user = await User.findById(req.user?._id)
-
-      console.log(oldPassword, newPassword)
 
      const isPasswordCorrect =  await user.isPasswordCorrect(oldPassword)
 
