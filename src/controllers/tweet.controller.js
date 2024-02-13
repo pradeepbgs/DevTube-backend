@@ -21,7 +21,7 @@ const createTweet = asyncHandler(async (req, res) => {
   });
 
   if (!tweet) {
-    throw new apiError("Tweet not created");
+    return res.status(400).json(new apiError("Tweet not created"));
   }
 
   return res.status(201).json(new apiResponse(true, tweet, "Tweet created"));
@@ -103,10 +103,10 @@ const updateTweet = asyncHandler(async (req, res) => {
   //TODO: update tweet
   const { content } = req.body;
   if (!content) {
-    throw new apiError("pls write something");
+    return res.status(400).json(new apiError("pls write something"));
   }
   if (!req.user) {
-    throw new apiError("user can't find, pls login");
+    return res.status(400).json(new apiError("user can't find, pls login"));
   }
   const tweet = await Tweet.findOneAndUpdate(
     { owner: req.user?._id },
@@ -115,7 +115,7 @@ const updateTweet = asyncHandler(async (req, res) => {
   );
 
   if (!tweet) {
-    throw new apiError("tweet not found");
+    return res.status(400).json(new apiError("tweet not found"));
   }
 
   return res.status(200).json(new apiResponse(true, tweet, "tweet updated"));
@@ -125,15 +125,15 @@ const deleteTweet = asyncHandler(async (req, res) => {
   //TODO: delete tweet
   const { tweetId } = req.params;
   if (!tweetId) {
-    throw new apiError("cant find tweet id");
+    return res.status(400).json(new apiError("cant find tweet id"));
   }
   if (!isValidObjectId(tweetId)) {
-    throw new apiError("invalid tweet id");
+    return res.status(400).json(new apiError("invalid tweet id"));
   }
 
   const authenticatedId = req.user;
   if (!authenticatedId) {
-    throw new apiError("user can't find, pls login");
+    return res.status(400).json(new apiError("user can't find, pls login"));
   }
 
   const tweet = await Tweet.findOneAndDelete({
@@ -142,7 +142,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
   });
 
   if (!tweet) {
-    throw new apiError("tweet not found");
+    return res.status(400).json(new apiError("tweet not found"));
   }
 
   return res

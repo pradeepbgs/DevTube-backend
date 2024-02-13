@@ -9,6 +9,7 @@ export const verifyJwt = asyncHandler(async (req, res, next) => {
         ?.replace("Bearer", "")
     
         if(!token){
+            res.status(401).json({message: "unauthorized request"})
             throw new apiError(401, "Unauthorized request")
         }
     
@@ -18,12 +19,14 @@ export const verifyJwt = asyncHandler(async (req, res, next) => {
         select("-password -refreshToken")
     
         if(!user){
-            throw new apiError(401, "invalid access token")
+            res.status(401).json({message: "unauthorized request"})
+            throw new apiError(401, "Unauthorized request")        
         }
     
         req.user = user;
         next()
     } catch (error) {
+        res.status(401).json({message: "unauthorized request"})       
         throw new apiError(401, error?.message || "something went wrong while verifying access token")
     }
 })

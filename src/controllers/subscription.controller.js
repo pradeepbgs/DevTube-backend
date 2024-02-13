@@ -9,10 +9,10 @@ const toggleSubscription = asyncHandler(async (req, res) => {
   const { channelId } = req.params;
   const user = req.user;
   if (!user) {
-    throw new apiError(401, "user not found");
+    return res.status(401).json(new apiError(401, "user not found"));
   }
   if (!mongoose.isValidObjectId(channelId) || !channelId) {
-    throw new apiError(401, "channel not found");
+    return res.status(401).json(new apiError(401, "channel not found"));
   }
 
   const existingSubscription = await subscriptionModel.findOneAndDelete({
@@ -53,7 +53,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
   ]);
 
   if (subscribers.length === 0) {
-    throw new apiError(400, "cant find subscribers");
+    return res.status(400).json(new apiError(400, "cant find subscribers"));
   }
 
   return res
@@ -84,7 +84,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
   ]);
 
   if (channels.length === 0) {
-    throw new apiError(400, "cant find subscribers");
+    return res.status(400).json(new apiError(400, "cant find subscribers"));
   }
 
   return res

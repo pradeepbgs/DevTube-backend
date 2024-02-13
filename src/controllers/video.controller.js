@@ -14,10 +14,10 @@ const getAllVideos = asyncHandler(async (req, res) => {
     const validSortFields = ["createdAt", "title"];
     const validSortTypes = ["asc", "desc"];
     if (sortBy && !validSortFields.includes(sortBy)) {
-      throw new apiError("Invalid sort field", 400);
+      return res.status(400).json({ message: "Invalid sort field" });
     }
     if (sortType && !validSortTypes.includes(sortType)) {
-      throw new apiError("Invalid sort type", 400);
+      return res.status(400).json({ message: "Invalid sort type" });
     }
 
     const queryObj = query
@@ -46,7 +46,7 @@ const getUserVideos = asyncHandler(async (req, res) => {
     const { userId } = req.params;
 
     if(!mongoose.isValidObjectId(userId)){
-      throw new apiError("Invalid user id", 400)
+      return res.status(400).json({message:"Invalid user id"})
     }
 
     const videos = await videoModel.aggregate([
@@ -93,15 +93,12 @@ const getUserVideos = asyncHandler(async (req, res) => {
       return res.status(200).json(new apiResponse(200, videos, "success"));
     }
 
-
     return res
     .status(200)
     .json(new apiResponse(200, videos, "success"));
 
 
   } catch (error) {
-
-    console.error("Error fetching user videos:", error);
     return res.status(500).json(new apiResponse(500, null, "Internal Server Error"));
   
   }
@@ -136,22 +133,22 @@ const videoUpload = asyncHandler(async (req, res) => {
 
     if (!user) return res.status(401).json(new apiError(401, "user not found"));
     if ([title, description].some((field) => field?.trim() === "")) {
-      throw new apiError("All field are required", 400);
+      return res.status(400).json(new apiError(400, "All fields are required"));
     }
 
-    if (!videoFile) throw new apiError("video file is required");
-    if (!thumbnail) throw new apiError("thumbnail file is required");
+    if (!videoFile) return res.status(400).json({message: "video file is required"});
+    if (!thumbnail) return res.status(400).json({message: "thumbnail file is required"});
 
     const video = await uploadOnCloudinary(videoFile);
     if (!video) {
       cleanUploadedfiles(req.files);
-      throw new apiError("video upload failed");
+      return res.status(400).json({message:"video upload failed"});
     }
 
     const thumbnailUrl = await uploadOnCloudinary(thumbnail);
     if (!thumbnailUrl) {
       cleanUploadedfiles(req.files);
-      throw new apiError("thumbnail upload failed");
+      return res.status(400).json({message:"thumbnail upload failed"});
     }
 
     const uploadedVideo = await videoModel.create({
@@ -165,10 +162,10 @@ const videoUpload = asyncHandler(async (req, res) => {
 
     return res
       .status(201)
-      .json(new apiResponse(201, uploadedVideo, "video uploaded successfully"));
+      .json(new apiResponse(201, uploadedVideo, "video uploaded successfully"))
   } catch (error) {
     cleanUploadedfiles(req.files);
-    throw new apiError(401, error.message && "error while uploading video");
+    return res.status(400).json({message: error.message && "error while uploading video"})
   }
 });
 
@@ -240,7 +237,7 @@ const videoDetails = asyncHandler(async (req, res) => {
   ]);
 
   if (videoDeatils.length === 0) {
-    throw new apiError(401, "video not found");
+    return res.status(400).json({message: "video not found"});
   }
 
   return res.status(200).json(new apiResponse(200, videoDeatils[0], "success"));
@@ -251,12 +248,12 @@ const updateVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
   const thumbnail = req.file?.path;
   if (!videoId) {
-    throw new apiError(401, "cant find video id");
+    return res.status(400).json({message: "cant find video id"});
   }
 
   const authenticatedId = req.user?._id;
   if (!authenticatedId) {
-    throw new apiError(401, "user not found");
+    return res.status(400).json({message: "user not found"});
   }
 
  
