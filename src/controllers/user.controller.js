@@ -41,6 +41,7 @@ const registerUser = asyncHandler(async(req, res) => {
    if(
     [fullname, email, username, password].some((field) => field?.trim() === "")
    ){
+        res.status(400).json({message: "All field are required"})
         throw new apiError("All field are required", 400)
    }
 
@@ -50,17 +51,21 @@ const registerUser = asyncHandler(async(req, res) => {
 
    if(existedUser){
     fs.unlinkSync(req.files?.avatar[0].path)
+      res.json({
+        message: "user already exist with this  uername or email"
+      })
       throw new apiError("User already exists", 409)
    }
 
   const avatarLocalpath =  req.files?.avatar[0]?.path;
-//   const coverImageLocalpath =  req.files?.coverImage[0]?.path;
+
 let coverImageLocalpath;
  if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
     coverImageLocalpath = req.files.coverImage[0].path;
  }
 
   if(!avatarLocalpath){
+    res.status(400).json({message: "Avatar is required"})
      throw new apiError("Avatar is required", 400)
   }
 
@@ -68,6 +73,7 @@ let coverImageLocalpath;
   const coverImage = await uploadOnCloudinary(coverImageLocalpath)
 
   if(!avatar){
+     res.status(400).json({ message: "Avatar uploading problem on cloudinary line no 50"}) 
      throw new apiError("Avatar is required", 400)
   }
 
@@ -86,6 +92,8 @@ let coverImageLocalpath;
 
 
  if(!createdUser){
+     res.status(400)
+     .json({ message: "User not created, something went wrong while creating user"})
      throw new apiError("User not created, something went wrong while creating user", 500)
  }
 
@@ -107,6 +115,7 @@ const loginUser = asyncHandler(async(req, res) => {
     const {username, email, password} = req.body
 
     if(!(username || email)){
+      res.status(400).json({message: "Username or email is required"})
       throw new apiError(400,"Username or email is required")
     }
 
@@ -115,12 +124,17 @@ const loginUser = asyncHandler(async(req, res) => {
     })
 
     if(!user){
-      throw new apiError(404,"User not found")
+      res.status(404).json({message: "User not found"})
+      throw new apiError(404, "User not found")
     }
 
-    const isPasswordValid = user.isPasswordCorrect(password)
+    const isPasswordValid = await user.isPasswordCorrect(password)
     if(!isPasswordValid){
-      throw new apiError(401,"Invalid User Password")
+      return res
+      .status(401)
+      .json({
+        message: "invalid user password"
+    })
     }
 
    const {accesToken, refreshToken} =  await generateAccessAndRefreshToken(user._id)
@@ -188,7 +202,9 @@ const refreshAccessToken = asyncHandler( async (req, res) => {
  
      const user = await User.findById(decodedToken?._id)
  
-     if(!user) throw new apiError(401, "invalid refresh toke")
+     if(!user){
+      return res.status(401).json({message:"user not found"})
+     }
  
      if(incomingRefreshToken !== user.refreshToken) throw new apiError(
        401, "refresh token is expired or used"
@@ -213,6 +229,7 @@ const refreshAccessToken = asyncHandler( async (req, res) => {
        )
       )
    } catch (error) {
+    res.status(400).json({message: "something went wrong while refreshing access token"})
     throw new apiError(401, error?.message || "something went wrong while refreshing access token")
    }
     
@@ -226,6 +243,7 @@ const changeCurrentPassword = asyncHandler( async (req, res) => {
      const isPasswordCorrect =  await user.isPasswordCorrect(oldPassword)
 
      if(!isPasswordCorrect){
+      res.status(400).json({message: "Old password is incorrect"})
        throw new apiError(400, "Old password is incorrect")
      }
 
@@ -258,7 +276,8 @@ const updateAccountDetail = asyncHandler( async (req, res) => {
   const {fullname, email} = req.body
 
   if(!(fullname || email)){
-    return new apiError(400, "fullname or email is required")
+    res.status(400).json({message: "fullname or email is required"})
+    throw new apiError(400, "fullname or email is required")  
   }
 
 
@@ -295,6 +314,7 @@ const updateUserAvatar = asyncHandler( async (req, res) => {
     const currentUser = await User.findById(req.user?._id)
 
     if (!currentUser) {
+      res.status(404).json({message: "User not found"})
       throw new apiError(404, "User not found")
     }
 
@@ -302,7 +322,10 @@ const updateUserAvatar = asyncHandler( async (req, res) => {
     
  
     const avatar = await uploadOnCloudinary(avatarLocalpath)
-    if(!avatar.url) return new apiError(400, "Error while uploading on cloudinary, user.controller.js line no 299")
+    if(!avatar.url){
+      res.status(400).json({ message: "Avatar uploading problem on cloudinary"})
+      throw new apiError("Avatar is required", 400)
+    }
     
     const user = await User.findByIdAndUpdate(
       req.user?._id,
@@ -325,6 +348,7 @@ const updateUserAvatar = asyncHandler( async (req, res) => {
    )
 
    } catch (error) {
+    res.status(400).json({message: "Error while updating Avatar image"})
     throw new apiError(
       401,
       error?.message || "Error while updating Avatar image "
@@ -342,12 +366,16 @@ const updateUserCoverImage = asyncHandler( async (req, res) => {
     const currentUser = await User.findById(req.user?._id)
 
     if (!currentUser) {
+      res.status(404).json({message: "User not found"})
       throw new apiError(404, "User not found")
     }
     const publicId = getPublicId(currentUser.coverImage)
   
     const coverImage = await uploadOnCloudinary(coverImageLocalpath)
-    if(!coverImage.url) return new apiError(400, "Error while uploading on cloudinary, user.controller.js line no 314")
+    if(!coverImage.url){
+      res.status(400).json({ message: "Cover image uploading problem on cloudinary"})
+      throw new apiError("Cover image is required", 400)
+    }
     
     const user = await User.findByIdAndUpdate(req.user?._id, {
       $set:{
@@ -369,6 +397,7 @@ const updateUserCoverImage = asyncHandler( async (req, res) => {
       )
     )
   } catch (error) {
+    res.status(400).json({message: "Error while updating Cover image"})
     throw new apiError(
       401,
       error?.message || "Error while updating Cover image "
@@ -382,7 +411,10 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   
      const {username} = req.params
 
-     if(!username?.trim()) return new apiError(400, "username is required")
+     if(!username?.trim()){
+      res.status(400).json({message: "Username is required"})
+      throw new apiError(400, "Username is required")
+     }
 
      const channel = await User.aggregate([
       {
@@ -438,6 +470,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
      ])
 
      if(!channel?.length){
+      res.status(404).json({message: "Channel not found"})
       throw new apiError(404, "Channel not found")
      }
 
