@@ -1,32 +1,36 @@
 import { User } from "../models/user.model.js";
-import { apiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken"
 
 export const verifyJwt = asyncHandler(async (req, res, next) => {
     try {
-        const token = req.cookies?.accessToken || req.header("Authorization")
-        ?.replace("Bearer", "")
-    
-        if(!token){
-            res.status(401).json({message: "unauthorized request"})
-            throw new apiError(401, "Unauthorized request")
+        let token = req.cookies?.accessToken || req.header("Authorization");
+        
+        if (!token) {
+            // No token provided, continue without setting req.user
+            return next();
         }
-    
-        const decodedToken =  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
-    
-        const user = await User.findById(decodedToken?._id).
-        select("-password -refreshToken")
-    
-        if(!user){
-            res.status(401).json({message: "unauthorized request"})
-            throw new apiError(401, "Unauthorized request")        
+
+        // Remove "Bearer " from the token if present
+        if (token.startsWith("Bearer ")) {
+            token = token.slice(7, token.length);
         }
-    
-        req.user = user;
-        next()
+
+        const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+
+        const user = await User.findById(decodedToken?._id).select("-password -refreshToken");
+
+        // Set req.user only if user is logged in
+        if (user) {
+            req.user = user;
+        }else{
+            req.user = null
+        }
+        
+        next();
     } catch (error) {
-        res.status(401).json({message: "unauthorized request"})       
-        throw new apiError(401, error?.message || "something went wrong while verifying access token")
+        // Log the error and continue without setting req.user
+        console.error("Error verifying token:", error);
+        next();
     }
-})
+});
