@@ -43,4 +43,3 @@ My YouTube-like app is a platform where users can upload, watch, and interact wi
 1. Clone the repository:
 
   # open source koder
-  # just checking if the contribution graph is working or not
