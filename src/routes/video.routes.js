@@ -10,6 +10,7 @@ import {
 } from "../controllers/video.controller.js";
 import { verifyJwt } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { notRestrictedAuthMiddlewares } from "../middlewares/notRestrictedAuth.js";
 
 
 
@@ -33,7 +34,7 @@ router.route('/')
 
 router
     .route('/:videoId')
-    .get(videoDetails)
+    .get(notRestrictedAuthMiddlewares, videoDetails)
     .delete(verifyJwt,deleteVideo)
     .patch(verifyJwt,upload.single('thumbnail'),updateVideo);
 
