@@ -25,6 +25,8 @@ export const verifyJwt = asyncHandler(async (req, res, next) => {
             res.status(401).json({ message: "No User found, Unauthorized request" });
             throw new Error("No User found, Unauthorized request");
         }
+
+        req.user = user;
         
         next();
     } catch (error) {
