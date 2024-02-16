@@ -28,7 +28,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
     const videos = await videoModel
       .find(queryObj)
-      .sort({ [sortBy]: sortType === "desc" ? -1 : 1 })
+      .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .populate("owner", "fullname username  avatar coverImage");
