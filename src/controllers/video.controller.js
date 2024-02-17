@@ -1,6 +1,10 @@
 import { apiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { deletOnCloudanry, getPublicId, uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  deletOnCloudanry,
+  getPublicId,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 import videoModel from "../models/video.model.js";
 import { apiResponse } from "../utils/apiResponce.js";
 import { cleanUploadedfiles } from "../utils/cleanup.videoFiles.js";
@@ -22,7 +26,15 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
     const queryObj = query
       ? {
-          title: { $regex: new RegExp(query, "i") },
+          title: {
+            $regex: new RegExp(
+              query
+                .replace(/[-\/\\^$*+?.()|[\]{}]/g, " ")
+                .split(" ")
+                .join("|"),
+              "i"
+            ),
+          },
         }
       : {};
 
@@ -41,12 +53,11 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
 const getUserVideos = asyncHandler(async (req, res) => {
   try {
-
     const { page = 1, limit = 10 } = req.query;
     const { userId } = req.params;
 
-    if(!mongoose.isValidObjectId(userId)){
-      return res.status(400).json({message:"Invalid user id"})
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ message: "Invalid user id" });
     }
 
     const videos = await videoModel.aggregate([
@@ -93,14 +104,11 @@ const getUserVideos = asyncHandler(async (req, res) => {
       return res.status(200).json(new apiResponse(200, videos, "success"));
     }
 
-    return res
-    .status(200)
-    .json(new apiResponse(200, videos, "success"));
-
-
+    return res.status(200).json(new apiResponse(200, videos, "success"));
   } catch (error) {
-    return res.status(500).json(new apiResponse(500, null, "Internal Server Error"));
-  
+    return res
+      .status(500)
+      .json(new apiResponse(500, null, "Internal Server Error"));
   }
 });
 
@@ -123,32 +131,33 @@ const videoUpload = asyncHandler(async (req, res) => {
 
     let thumbnail;
     if (
-      req.files && 
+      req.files &&
       Array.isArray(req.files.thumbnail) &&
       req.files.thumbnail.length > 0
     ) {
       thumbnail = req.files.thumbnail[0].path;
     }
-  
 
     if (!user) return res.status(401).json(new apiError(401, "user not found"));
     if ([title, description].some((field) => field?.trim() === "")) {
       return res.status(400).json(new apiError(400, "All fields are required"));
     }
 
-    if (!videoFile) return res.status(400).json({message: "video file is required"});
-    if (!thumbnail) return res.status(400).json({message: "thumbnail file is required"});
+    if (!videoFile)
+      return res.status(400).json({ message: "video file is required" });
+    if (!thumbnail)
+      return res.status(400).json({ message: "thumbnail file is required" });
 
     const video = await uploadOnCloudinary(videoFile);
     if (!video) {
       cleanUploadedfiles(req.files);
-      return res.status(400).json({message:"video upload failed"});
+      return res.status(400).json({ message: "video upload failed" });
     }
 
     const thumbnailUrl = await uploadOnCloudinary(thumbnail);
     if (!thumbnailUrl) {
       cleanUploadedfiles(req.files);
-      return res.status(400).json({message:"thumbnail upload failed"});
+      return res.status(400).json({ message: "thumbnail upload failed" });
     }
 
     const uploadedVideo = await videoModel.create({
@@ -162,10 +171,12 @@ const videoUpload = asyncHandler(async (req, res) => {
 
     return res
       .status(201)
-      .json(new apiResponse(201, uploadedVideo, "video uploaded successfully"))
+      .json(new apiResponse(201, uploadedVideo, "video uploaded successfully"));
   } catch (error) {
     cleanUploadedfiles(req.files);
-    return res.status(400).json({message: error.message && "error while uploading video"})
+    return res
+      .status(400)
+      .json({ message: error.message && "error while uploading video" });
   }
 });
 
@@ -237,7 +248,7 @@ const videoDetails = asyncHandler(async (req, res) => {
   ]);
 
   if (videoDeatils.length === 0) {
-    return res.status(400).json({message: "video not found"});
+    return res.status(400).json({ message: "video not found" });
   }
 
   return res.status(200).json(new apiResponse(200, videoDeatils[0], "success"));
@@ -248,23 +259,22 @@ const updateVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
   const thumbnail = req.file?.path;
   if (!videoId) {
-    return res.status(400).json({message: "cant find video id"});
+    return res.status(400).json({ message: "cant find video id" });
   }
 
   const authenticatedId = req.user?._id;
   if (!authenticatedId) {
-    return res.status(400).json({message: "user not found"});
+    return res.status(400).json({ message: "user not found" });
   }
 
- 
   try {
     const video = await videoModel.findOne({
       _id: videoId,
       owner: authenticatedId,
     });
 
-    if(!video) {
-      throw new apiError(401, "video not found")
+    if (!video) {
+      throw new apiError(401, "video not found");
     }
 
     const oldThumbnail = video.thumbnail;
@@ -286,8 +296,8 @@ const updateVideo = asyncHandler(async (req, res) => {
 
       video.thumbnail = thumbnailUrl.url;
 
-      if(oldThumbnail){
-        deletOnCloudanry(getPublicId(oldThumbnail))
+      if (oldThumbnail) {
+        deletOnCloudanry(getPublicId(oldThumbnail));
       }
     }
 
@@ -310,12 +320,12 @@ const updateVideo = asyncHandler(async (req, res) => {
   }
 });
 
-const deleteVideo = asyncHandler(async (req, res) => { 
-  const { videoId } = req.params
-  
+const deleteVideo = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
   try {
     if (!videoId) {
-      return res.status(401).json(new apiError(401, "Can't find video id"))
+      return res.status(401).json(new apiError(401, "Can't find video id"));
     }
 
     const deletedVideo = await videoModel.findOneAndDelete({
@@ -324,21 +334,22 @@ const deleteVideo = asyncHandler(async (req, res) => {
     });
 
     if (deletedVideo && deletedVideo.videoFile) {
-      deletOnCloudanry(getPublicId(deletedVideo.videoFile))
+      deletOnCloudanry(getPublicId(deletedVideo.videoFile));
     } else {
-      throw new apiError(401, "Video not found")
+      throw new apiError(401, "Video not found");
     }
-    
-    return res
-    .status(200)
-    .json(new apiResponse(200, "Video deleted successfully"))
 
+    return res
+      .status(200)
+      .json(new apiResponse(200, "Video deleted successfully"));
   } catch (error) {
-    console.error("Error in video.controller.js on deleteVideo controller:", error)
-    throw new apiError(401, "Error while deleting video: " + error.message)
+    console.error(
+      "Error in video.controller.js on deleteVideo controller:",
+      error
+    );
+    throw new apiError(401, "Error while deleting video: " + error.message);
   }
 });
-
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -377,8 +388,6 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
   }
 });
 
-
-
 export {
   videoUpload,
   updateVideo,
@@ -387,4 +396,4 @@ export {
   togglePublishStatus,
   getAllVideos,
   getUserVideos,
-}
+};
