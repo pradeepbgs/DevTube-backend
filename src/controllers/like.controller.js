@@ -110,18 +110,57 @@ const getLikedVideos = asyncHandler(async (req, res) => {
       $match: { likedBy: new mongoose.Types.ObjectId(authenticatedId) },
     },
     {
+      $sort: {
+        createdAt: -1,
+      }
+    },
+    {
       $lookup: {
         from: "videos",
         localField: "video",
         foreignField: "_id",
-        as: "likedVideos",
+        as: "video",
       },
     },
+    {
+      $lookup: {
+        from: "users",
+        localField: "video.owner",
+        foreignField: "_id",
+        as: "owner",
+      }
+    },
+    {
+      $addFields: {
+        video: { $arrayElemAt: ["$video", 0] },
+        owner: { $arrayElemAt: ["$owner", 0] },
+      },
+    },
+    {
+      $project: {
+        _id: "$video._id",
+        title: "$video.title",
+        description: "$video.description",
+        thumbnail: "$video.thumbnail",
+        duration: "$video.duration",
+        videoFile: "$video.videoFile",
+        views: "$video.views",
+        createdAt: "$video.createdAt",
+        updatedAt: "$video.updatedAt",
+        owner: {
+            _id: "$owner._id",
+            username: "$owner.username",
+            fullname: "$owner.fullname",
+            avatar: "$owner.avatar",
+        }
+      }
+    }
   ]);
 
   return res
     .status(200)
-    .json(new apiResponse(200, likedVideos[0], "Liked videos"));
+    .json(new apiResponse(200, likedVideos, "Liked videos"));
 });
+
 
 export { toggleCommentLike, toggleTweetLike, toggleVideoLike, getLikedVideos };
