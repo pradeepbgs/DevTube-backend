@@ -3,11 +3,10 @@ import {
     getChannelStats,
     getChannelVideos,
 } from "../controllers/dashboard.controller.js"
-import { strictLoggedUserMiddlewares } from '../middlewares/strictLoggedUser.js';
-
+import {verifyJwt} from '../middlewares/auth.middleware.js'
 const router = Router();
 
-router.use(strictLoggedUserMiddlewares); 
+router.use(verifyJwt); 
 
 router.route("/stats/:channelId").get(getChannelStats);
 router.route("/videos/:channelId").get(getChannelVideos);
