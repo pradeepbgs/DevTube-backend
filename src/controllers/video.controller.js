@@ -67,6 +67,11 @@ const getUserVideos = asyncHandler(async (req, res) => {
         },
       },
       {
+        $sort: {
+          createdAt: -1,
+        }
+      },
+      {
         $skip: (page - 1) * limit,
       },
       {
@@ -88,6 +93,8 @@ const getUserVideos = asyncHandler(async (req, res) => {
           description: 1,
           videoFile: 1,
           thumbnail: 1,
+          duration: 1,
+          views: 1,
           createdAt: 1,
           owner: {
             _id: 1,
