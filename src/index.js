@@ -5,20 +5,20 @@ import app from './app.js'
 dotenv.config()
 
 
-connectDB()
+// connectDB()
 
-.then(() =>(
-    app.listen(process.env.PORT || 3000, () =>{
-        console.log(`app is running on http://localhost:${process.env.PORT}`)
-    })
-))
-.catch((err) => (
-    console.log('mongoDB error on index,js::', err)
-))
-app.on("error", (error) =>{
-    console.log("Error: ",error);
-    throw error;
-})
+// .then(() =>(
+//     app.listen(process.env.PORT || 3000, () =>{
+//         console.log(`app is running on http://localhost:${process.env.PORT}`)
+//     })
+// ))
+// .catch((err) => (
+//     console.log('mongoDB error on index,js::', err)
+// ))
+// app.on("error", (error) =>{
+//     console.log("Error: ",error);
+//     throw error;
+// })
 
 
 
