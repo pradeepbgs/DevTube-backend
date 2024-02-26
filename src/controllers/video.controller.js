@@ -1,3 +1,4 @@
+import { Worker } from "worker_threads";
 import { apiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
@@ -124,7 +125,6 @@ const videoUpload = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
 
   try {
-    // const videoFile = req.files?.video[0]?.path;
     let videoFile;
     if (
       req.files &&
@@ -133,8 +133,6 @@ const videoUpload = asyncHandler(async (req, res) => {
     ) {
       videoFile = req.files.video[0].path;
     }
-
-    // const thumbnail = req.files?.thumbnail[0]?.path;
 
     let thumbnail;
     if (
@@ -150,35 +148,44 @@ const videoUpload = asyncHandler(async (req, res) => {
       return res.status(400).json(new apiError(400, "All fields are required"));
     }
 
-    if (!videoFile)
-      return res.status(400).json({ message: "video file is required" });
-    if (!thumbnail)
-      return res.status(400).json({ message: "thumbnail file is required" });
-
-    const video = await uploadOnCloudinary(videoFile);
-    if (!video) {
-      cleanUploadedfiles(req.files);
-      return res.status(400).json({ message: "video upload failed" });
+    if (!videoFile || !thumbnail) {
+      return res.status(400).json({ message: "Both video file and thumbnail are required" });
     }
+  
+    const videoWorker = new Worker("./src/workers/video.worker.js", {
+      workerData: { videoFile, thumbnail },
+    })
 
-    const thumbnailUrl = await uploadOnCloudinary(thumbnail);
-    if (!thumbnailUrl) {
-      cleanUploadedfiles(req.files);
-      return res.status(400).json({ message: "thumbnail upload failed" });
-    }
+    videoWorker.on("message", async (data) => {
+      if (data.error) {
+        cleanUploadedfiles(req.files)
+        return res.status(400).json(new apiError(400, data.error));
+      }
 
-    const uploadedVideo = await videoModel.create({
-      title,
-      description,
-      videoFile: video.url ?? "",
-      thumbnail: thumbnailUrl.url ?? "",
-      duration: video.duration ?? 0,
-      owner: user?._id,
-    });
+      const { video, thumbnailUrl } = data;
 
-    return res
+      const uploadedVideo = await videoModel.create({
+        title,
+        description,
+        videoFile: video.url ?? "",
+        thumbnail: thumbnailUrl.url ?? "",
+        duration: video.duration ?? 0,
+        owner: user?._id,
+      });      
+
+      return res
       .status(201)
       .json(new apiResponse(201, uploadedVideo, "video uploaded successfully"));
+
+    })
+
+    videoWorker.on('error', () => {
+      cleanUploadedfiles(req.files);
+      return res.status(400).json(new apiError(400, "error while uploading video"));
+    })
+
+    videoWorker.postMessage('start');
+    
   } catch (error) {
     cleanUploadedfiles(req.files);
     return res
