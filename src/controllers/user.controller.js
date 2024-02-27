@@ -1,3 +1,4 @@
+import { Worker } from "worker_threads";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {apiError} from "../utils/apiError.js";
 import {User} from "../models/user.model.js"
@@ -23,85 +24,61 @@ const generateAccessAndRefreshToken = async (userId) => {
   }
 }
 
-const registerUser = asyncHandler(async(req, res) => {
+const registerUser = asyncHandler(async (req, res) => {
+  const { fullname, email, username, password } = req.body;
 
-     // get the details from user ---done
-     // validation - not empty ----done
-     // check if user already exists : usernme , email ---done
-     //check for image, check for avatar ---done
-     // upload them to cloudinary, avatar ---done
-     // create user object - create entry in db ---done
-     // remove password and refresh token field from response --done
-     // check for user creation  ---done
-     // return response --done
-
-   const {fullname, email, username, password} =  req.body
-   
-   
-   if(
-    [fullname, email, username, password].some((field) => field?.trim() === "")
-   ){
-        res.status(400).json({message: "All field are required"})
-        throw new apiError("All field are required", 400)
-   }
-
-   const existedUser = await User.findOne({
-     $or:[{ username },{ email }]
-   })
-
-   if(existedUser){
-    fs.unlinkSync(req.files?.avatar[0].path)
-      res.json({
-        message: "user already exist with this  uername or email"
-      })
-      throw new apiError("User already exists", 409)
-   }
-
-  const avatarLocalpath =  req.files?.avatar[0]?.path;
-
-let coverImageLocalpath;
- if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
-    coverImageLocalpath = req.files.coverImage[0].path;
- }
-
-  if(!avatarLocalpath){
-    res.status(400).json({message: "Avatar is required"})
-     throw new apiError("Avatar is required", 400)
+  if ([fullname, email, username, password].some((field) => field?.trim() === "")) {
+    return res.status(400).json({ message: "All fields are required" });
   }
 
-  const avatar = await uploadOnCloudinary(avatarLocalpath)
-  const coverImage = await uploadOnCloudinary(coverImageLocalpath)
-
-  if(!avatar){
-     res.status(400).json({ message: "Avatar uploading problem on cloudinary line no 50"}) 
-     throw new apiError("Avatar is required", 400)
+  const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+  if (existingUser) {
+    fs.unlinkSync(req.files?.avatar[0].path);
+    return res.status(409).json({ message: "User already exists with this username or email" });
   }
 
- const user = await User.create({
-     fullname:fullname,
-     avatar: avatar.url ?? "",
-     coverImage: coverImage?.url ?? "",
-     email: email,
-     password: password,
-     username: username.toLowerCase()
- })
+  let avatarLocalpath;
+  let coverImageLocalpath;
+  if (req.files) {
+    if (Array.isArray(req.files.avatar) && req.files.avatar.length > 0) {
+      avatarLocalpath = req.files.avatar[0].path;
+    }
+    if (Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+      coverImageLocalpath = req.files.coverImage[0].path;
+    }
+  }
 
- const createdUser = await User.findById(user._id).select(
-     "-password -refreshToken"
- )
+  if (!avatarLocalpath) {
+    return res.status(400).json({ message: "Avatar is required" });
+  }
 
+  const uploadWorker = new Worker("./src/workers/upload.worker.js", {
+    workerData: { avatarLocalpath, coverImageLocalpath },
+  });
 
- if(!createdUser){
-     res.status(400)
-     .json({ message: "User not created, something went wrong while creating user"})
-     throw new apiError("User not created, something went wrong while creating user", 500)
- }
+  uploadWorker.on("message", async (data) => {
+    if (data.error) {
+      return res.status(400).json(new apiResponse(400, {}, data.error));
+    }
+    const { avatar, coverImage } = data;
 
- return res.status(201).json(
-     new apiResponse(200, createdUser,"User created successfully")
- )
+    const user = await User.create({
+      fullname,
+      avatar: avatar.url ?? "",
+      coverImage: coverImage?.url ?? "",
+      email,
+      password,
+      username: username.toLowerCase(),
+    });
 
-})
+    const createdUser = await User.findById(user._id).select("-password -refreshToken");
+    if (!createdUser) {
+      return res.status(400).json({ message: "User not created, something went wrong while creating user" });
+    }
+
+    return res.status(200).json(new apiResponse(200, createdUser, "User created successfully"));
+  });
+});
 
 const loginUser = asyncHandler(async(req, res) => {
     // get the details from user from req.body  ---done
@@ -320,32 +297,36 @@ const updateUserAvatar = asyncHandler( async (req, res) => {
 
     const publicId = getPublicId(currentUser.avatar)
     
- 
-    const avatar = await uploadOnCloudinary(avatarLocalpath)
-    if(!avatar.url){
-      res.status(400).json({ message: "Avatar uploading problem on cloudinary"})
-      throw new apiError("Avatar is required", 400)
-    }
+    const uploadWorker = new Worker('./src/workers/upload.worker.js', {
+      workerData: { avatarLocalpath }
+    });
     
-    const user = await User.findByIdAndUpdate(
-      req.user?._id,
-      { $set: { avatar: avatar.url } },
-      { new: true, select: '-password' }
-    )
+    uploadWorker.on('message', async (data) => {
+      if(data.error){
+        return res.status(400).json(new apiResponse(400, {}, "error while updating avatar"))
+      }
+      const avatar = data.avatar
 
-    if(user){
-      deletOnCloudanry(publicId)
-    }
- 
-    return res
-   .status(200)
-   .json(
-     new apiResponse(
-       200,
-       user,
-       "Avatar image updated successfully"
-     )
-   )
+      const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        { $set: { avatar: avatar.url } },
+        { new: true, select: '-password' }
+      )
+  
+      if(user){
+        deletOnCloudanry(publicId)
+      }
+
+      return res
+      .status(200)
+      .json(
+        new apiResponse(
+          200,
+          user,
+          "Avatar image updated successfully"
+        )
+      )
+    })
 
    } catch (error) {
     res.status(400).json({message: "Error while updating Avatar image"})
@@ -370,32 +351,37 @@ const updateUserCoverImage = asyncHandler( async (req, res) => {
       throw new apiError(404, "User not found")
     }
     const publicId = getPublicId(currentUser.coverImage)
-  
-    const coverImage = await uploadOnCloudinary(coverImageLocalpath)
-    if(!coverImage.url){
-      res.status(400).json({ message: "Cover image uploading problem on cloudinary"})
-      throw new apiError("Cover image is required", 400)
-    }
     
-    const user = await User.findByIdAndUpdate(req.user?._id, {
-      $set:{
-        coverImage: coverImage.url
+    const uploadWorker = new Worker('.src/workers/upload.worker.js', {
+      workerData: {coverImageLocalpath}
+    })
+    uploadWorker.on('message', async (data) => {
+      if(data.error){
+        return res.status(400).json(new apiResponse(400, {}, "error while updating cover image"))
       }
-    }).select('-password')
-    
-    if(user){
-      deletOnCloudanry(publicId)
-    }
-  
-    return res
-    .status(200)
-    .json(
-      new apiResponse(
-        200,
-        user,
-        "CoverImage updated successfully"
+      const coverImage = data.coverImage
+
+      const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        { $set: { coverImage: coverImage.url } },
+        { new: true, select: '-password' }
       )
-    )
+
+      if(user){
+        deletOnCloudanry(publicId)
+      }
+
+      return res
+      .status(200)
+      .json(
+        new apiResponse(
+          200,
+          user,
+          "CoverImage image updated successfully"
+        )
+      )
+    })
+  
   } catch (error) {
     res.status(400).json({message: "Error while updating Cover image"})
     throw new apiError(
@@ -403,7 +389,6 @@ const updateUserCoverImage = asyncHandler( async (req, res) => {
       error?.message || "Error while updating Cover image "
     )
   }
-
 
 })
 

@@ -151,7 +151,7 @@ const videoUpload = asyncHandler(async (req, res) => {
       return res.status(400).json({ message: "Both video file and thumbnail are required" });
     }
   
-    const uploadWorker = new Worker("./src/workers/video.worker.js", {
+    const uploadWorker = new Worker("./src/workers/upload.worker.js", {
       workerData: { videoFile, thumbnail },
     })
 
