@@ -4,7 +4,6 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import {
   deletOnCloudanry,
   getPublicId,
-  uploadOnCloudinary,
 } from "../utils/cloudinary.js";
 import videoModel from "../models/video.model.js";
 import { apiResponse } from "../utils/apiResponce.js";
@@ -152,11 +151,11 @@ const videoUpload = asyncHandler(async (req, res) => {
       return res.status(400).json({ message: "Both video file and thumbnail are required" });
     }
   
-    const videoWorker = new Worker("./src/workers/video.worker.js", {
+    const uploadWorker = new Worker("./src/workers/video.worker.js", {
       workerData: { videoFile, thumbnail },
     })
 
-    videoWorker.on("message", async (data) => {
+    uploadWorker.on("message", async (data) => {
       if (data.error) {
         cleanUploadedfiles(req.files)
         return res.status(400).json(new apiError(400, data.error));
@@ -302,17 +301,24 @@ const updateVideo = asyncHandler(async (req, res) => {
     }
 
     if (thumbnail) {
-      const thumbnailUrl = await uploadOnCloudinary(thumbnail);
+      const uploadWorker = new Worker('./src/workers/upload.worker.js', {
+        workerData: { thumbnail },
+      })
 
-      if (!thumbnailUrl) {
-        throw new apiError(401, "error while uploading on cloudinary");
-      }
+      uploadWorker.on('message', async (data) => {
+        if (data.error) {
+          return res.status(400).json(new apiError(400, data.error));
+        }
+        const { thumbnailUrl } = data;
+        if (!thumbnailUrl) {
+          throw new apiError(401, "error while uploading on cloudinary");
+        }
+        video.thumbnail = thumbnailUrl.url;
 
-      video.thumbnail = thumbnailUrl.url;
-
-      if (oldThumbnail) {
-        deletOnCloudanry(getPublicId(oldThumbnail));
-      }
+        if (oldThumbnail) {
+          deletOnCloudanry(getPublicId(oldThumbnail));
+        }
+      })
     }
 
     await video.save();

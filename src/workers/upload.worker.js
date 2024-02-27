@@ -1,7 +1,7 @@
 import { parentPort , workerData} from "worker_threads";
 import {uploadOnCloudinary} from '../utils/cloudinary.js'
 
- const uploadVideoWorker = async () => {
+ const uploadWorker = async () => {
     try {
         const { videoFile, thumbnail } = workerData;
 
@@ -15,4 +15,4 @@ import {uploadOnCloudinary} from '../utils/cloudinary.js'
     }
 }
 
-uploadVideoWorker();
+uploadWorker();
