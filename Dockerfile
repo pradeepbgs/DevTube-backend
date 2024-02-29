@@ -7,9 +7,10 @@ WORKDIR /build
 # Install Redis
 RUN apt-get update && apt-get install -y redis-server
 
-# Set up Redis configuration (optional)
-COPY redis.conf /etc/redis/redis.conf
+# Copy Redis configuration (optional)
+# COPY redis.conf /etc/redis/redis.conf
 
+# Copy application files and install dependencies
 COPY package*.json ./
 RUN yarn install
 
@@ -22,5 +23,8 @@ COPY .prettierignore .prettierignore
 COPY .prettierrc .prettierrc
 COPY README.md README.md
 
+# Expose the port for your Node.js application
+EXPOSE 3000
 
-CMD ["sh", "-c", "service redis-server start && yarn start"]
+# Start Redis and your application
+CMD ["sh", "-c", "redis-server /etc/redis/redis.conf && yarn start"]
