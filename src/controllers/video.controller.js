@@ -1,4 +1,5 @@
 import { Worker } from "worker_threads";
+import {redis} from '../utils/redis.js'
 import { apiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
@@ -60,6 +61,12 @@ const getUserVideos = asyncHandler(async (req, res) => {
       return res.status(400).json({ message: "Invalid user id" });
     }
 
+    const cacheValue = await redis.get('videos');
+
+    if(cacheValue){
+      return res.status(200).json(new apiResponse(200, JSON.parse(cacheValue), "success"));
+    }
+
     const videos = await videoModel.aggregate([
       {
         $match: {
@@ -69,7 +76,7 @@ const getUserVideos = asyncHandler(async (req, res) => {
       {
         $sort: {
           createdAt: -1,
-        }
+        },
       },
       {
         $skip: (page - 1) * limit,
@@ -110,6 +117,8 @@ const getUserVideos = asyncHandler(async (req, res) => {
     if (videos.length === 0) {
       return res.status(200).json(new apiResponse(200, videos, "success"));
     }
+
+    await redis.set('videos', JSON.stringify(videos), 'EX', 60);
 
     return res.status(200).json(new apiResponse(200, videos, "success"));
   } catch (error) {
@@ -197,7 +206,17 @@ const videoDetails = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const user = req.user;
 
-  const videoDeatils = await videoModel.aggregate([
+  // await videoModel.updateOne(
+  //   { _id: new mongoose.Types.ObjectId(videoId) },
+  //   { $inc: { views: 1 } }
+  // );
+  const cacheValue = await redis.get('videoDetails');
+
+  if(cacheValue){
+    return res.status(200).json(new apiResponse(200, JSON.parse(cacheValue), "success"));
+  }
+
+  const videoDetails = await videoModel.aggregate([
     { $match: { _id: new mongoose.Types.ObjectId(videoId) } },
     {
       $lookup: {
@@ -235,6 +254,13 @@ const videoDetails = asyncHandler(async (req, res) => {
             else: false,
           },
         },
+        isLiked: {
+          $cond: {
+            if: { $in: [user?._id, "$likes.likedBy"] },
+            then: true,
+            else: false,
+          },
+        },
       },
     },
     {
@@ -250,6 +276,7 @@ const videoDetails = asyncHandler(async (req, res) => {
           avatar: 1,
         },
         isSubscribed: 1,
+        isLiked: 1,
         likesCount: 1,
         subscribersCount: 1,
         createdAt: 1,
@@ -260,11 +287,13 @@ const videoDetails = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if (videoDeatils.length === 0) {
+  if (videoDetails.length === 0) {
     return res.status(400).json({ message: "video not found" });
   }
 
-  return res.status(200).json(new apiResponse(200, videoDeatils[0], "success"));
+  await redis.set('videoDetails', JSON.stringify(videoDetails[0]), 'EX', 60);
+  
+  return res.status(200).json(new apiResponse(200, videoDetails[0], "success"));
 });
 
 const updateVideo = asyncHandler(async (req, res) => {

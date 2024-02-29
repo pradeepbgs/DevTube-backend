@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+    environment:
+      - NODE_ENV=development
+      - REDIS_HOST=redis
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"

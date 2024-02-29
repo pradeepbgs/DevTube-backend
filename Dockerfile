@@ -4,8 +4,14 @@ FROM node:18 as builder
 # Set the working directory
 WORKDIR /build
 
+# Install Redis
+RUN apt-get update && apt-get install -y redis-server
+
+# Set up Redis configuration (optional)
+COPY redis.conf /etc/redis/redis.conf
+
 COPY package*.json ./
-RUN npm install
+RUN yarn install
 
 COPY public/ public/
 COPY src/ src/
@@ -16,6 +22,5 @@ COPY .prettierignore .prettierignore
 COPY .prettierrc .prettierrc
 COPY README.md README.md
 
-EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["sh", "-c", "service redis-server start && yarn start"]
