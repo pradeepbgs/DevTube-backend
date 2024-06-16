@@ -1,15 +1,14 @@
 import { User } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import {apiError} from "../utils/apiError.js";
 import jwt from "jsonwebtoken"
 
-export const verifyJwt = asyncHandler(async (req, res, next) => {
+export const notRestrictedAuthMiddlewares = asyncHandler(async (req, res, next) => {
     try {
         let token = req.cookies?.accessToken || req.header("Authorization");
         
         if (!token) {
-           res.status(401).json({ message: "no access token found , Unauthorize request" });
-            throw new apiError("no access token found, Unauthorize request");
+            // No token provided, continue without setting req.user
+            return next();
         }
 
         // Remove "Bearer " from the token if present
@@ -22,12 +21,11 @@ export const verifyJwt = asyncHandler(async (req, res, next) => {
         const user = await User.findById(decodedToken?._id).select("-password -refreshToken");
 
         // Set req.user only if user is logged in
-        if (!user) {
-            res.status(401).json({ message: "No User found, Unauthorized request" });
-            throw new apiError("No User found, Unauthorized request");
+        if (user) {
+            req.user = user;
+        }else{
+            req.user = null
         }
-
-        req.user = user
         
         next();
     } catch (error) {

@@ -1,22 +1,20 @@
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import bodyparser from 'body-parser'
 const app = express()
 
 app.use(cors({
-    origin: 'https://fsvideo.vercel.app',
+    origin: 'http://localhost:5173',
     credentials: true,
 }))
-
-app.use(bodyparser.json())
+ 
 app.use(express.json({limit: '16kb'}))
 app.use(express.urlencoded({extended: true, limit:'16kb'}))
 app.use(express.static('public'))
 app.use(cookieParser())
 
 // routes import
-
+ 
 import userRouter from './routes/user.routes.js'
 import videoRouter from './routes/video.routes.js'
 import commentRouter from './routes/comment.routes.js'
@@ -26,6 +24,7 @@ import playlistRouter from './routes/playlist.routes.js'
 import likesRouter from './routes/like.routes.js'
 import healthcheckRouter from './routes/healthcheck.routes.js'
 import dashboardRouter from './routes/dashboard.routes.js'
+
 
 // route declaration
 app.use('/api/v1/users', userRouter)
