@@ -166,11 +166,12 @@ const videoUpload = asyncHandler(async (req, res) => {
 
     uploadWorker.on("message", async (data) => {
       if (data.error) {
-        cleanUploadedfiles(req.files)
-        return res.status(400).json(new apiError(400, data.error));
+        // cleanUploadedfiles(req.files)
+        // return res.status(400).json(new apiResponse(400, {}, data.error));
       }
 
       const { video, thumbnailUrl } = data;
+      console.log(data)
 
       const uploadedVideo = await videoModel.create({
         title,
@@ -188,14 +189,15 @@ const videoUpload = asyncHandler(async (req, res) => {
     })
 
     videoWorker.on('error', () => {
-      cleanUploadedfiles(req.files);
-      return res.status(400).json(new apiError(400, "error while uploading video"));
-    })
+      // cleanUploadedfiles(req.files);
+      return res.status(400).json(new apiResponse(400, {},"error while uploading video"));
 
+    })
+ 
     videoWorker.postMessage('start');
     
   } catch (error) {
-    cleanUploadedfiles(req.files);
+    // cleanUploadedfiles(req.files);
     return res
       .status(400)
       .json({ message: error.message && "error while uploading video" });
