@@ -11,16 +11,15 @@ import { mongoose } from "mongoose";
 const generateAccessAndRefreshToken = async (userId) => {
   try {
        const user = await User.findById(userId)
-       const accesToken = user.generateAccessToken()
-       const refreshToken = user.generateRefreshToken()
-
+       const accesToken = await user.generateAccessToken()
+       const refreshToken = await user.generateRefreshToken()
       user.refreshToken = refreshToken
       await user.save({validateBeforeSave: false})
 
       return {accesToken, refreshToken}
 
   } catch (error) {
-    throw new apiError(500, "something went wrong while generating refresh and access token")
+    throw new apiError(500, "something went wrong while generating refresh and access token",error.message)
   }
 }
 
@@ -52,7 +51,7 @@ const registerUser = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Avatar is required" });
   }
 
-  const uploadWorker = new Worker("./src/workers/upload.worker.js", {
+  const uploadWorker =  new Worker("./src//workers/upload.worker.js", {
     workerData: { avatarLocalpath, coverImageLocalpath },
   });
 
@@ -90,7 +89,6 @@ const loginUser = asyncHandler(async(req, res) => {
     // send response if its logged in
 
     const {username, email, password} = req.body
-
     if(!(username || email)){
       res.status(400).json({message: "Username or email is required"})
       throw new apiError(400,"Username or email is required")
@@ -114,7 +112,7 @@ const loginUser = asyncHandler(async(req, res) => {
     })
     }
 
-   const {accesToken, refreshToken} =  await generateAccessAndRefreshToken(user._id)
+   const {accesToken, refreshToken} =  await generateAccessAndRefreshToken(user?._id)
 
    const loggedInUser = await User.findById(user._id)
    .select("-password -refreshToken")

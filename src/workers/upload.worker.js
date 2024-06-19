@@ -4,7 +4,6 @@ import {uploadOnCloudinary} from '../utils/cloudinary.js'
  const uploadWorker = async () => {
     try {
         const { videoFile, thumbnail , avatarLocalpath, coverImageLocalpath} = workerData;
-
         let video;
         if (videoFile) {
             video = await uploadOnCloudinary(videoFile);
