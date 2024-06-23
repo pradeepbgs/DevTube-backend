@@ -248,34 +248,38 @@ const getCurrentUser = asyncHandler( async (req, res) => {
 })
 
 const updateAccountDetail = asyncHandler( async (req, res) => {
-  const {fullname, email} = req.body
+  const {fullname, username} = req.body
 
-  if(!(fullname || email)){
-    res.status(400).json({message: "fullname or email is required"})
-    throw new apiError(400, "fullname or email is required")  
-  }
+ if (!req.user) return res.status(404).json({message: "Unauthorized request"})
 
+  try {
+    const user = await User.findById(req.user?._id)
 
-  const user = await User.findByIdAndUpdate(
-    req.user?._id,
-    {
-      $set: {
-        fullname,
-        email
-      }
-    },
-    {new : true}
-  ).select("-password")
-
-  return res
-  .status(200)
-  .json(
-    new apiResponse(
-      200,
-      user,
-      "Account details updated successfully"
+    if (!user) return res.status(404).json({message: "User not found"})
+  
+    if (fullname && fullname !== user?.fullname){
+      user.fullname = fullname
+    }
+  
+    if (username && username !== user?.username){
+      user.username = username
+    }
+  
+    await user.save()
+  
+    return res
+    .status(200)
+    .json(
+      new apiResponse(
+        200,
+        user,
+        "Account details updated successfully"
+      )
     )
-  )
+  } catch (error) {
+    return res.status(500).json(new apiResponse(500, null, "couldn't update details"));
+
+  }
 
 })
 
