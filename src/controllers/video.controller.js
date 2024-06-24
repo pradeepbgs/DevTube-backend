@@ -1,5 +1,5 @@
 import { Worker } from "worker_threads";
-import {redis} from '../utils/redis.js'
+// import {redis} from '../utils/redis.js'
 import { apiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
@@ -60,12 +60,12 @@ const getUserVideos = asyncHandler(async (req, res) => {
     if (!mongoose.isValidObjectId(userId)) {
       return res.status(400).json({ message: "Invalid user id" });
     }
-    const cacheKey = `videos:${userId}:${page}:${limit}`;
-    const cacheValue = await redis.get(cacheKey);
+    // const cacheKey = `videos:${userId}:${page}:${limit}`;
+    // const cacheValue = await redis.get(cacheKey);
 
-    if(cacheValue){
-      return res.status(200).json(new apiResponse(200, JSON.parse(cacheValue), "success"));
-    }
+    // if(cacheValue){
+    //   return res.status(200).json(new apiResponse(200, JSON.parse(cacheValue), "success"));
+    // }
 
     const videos = await videoModel.aggregate([
       {
@@ -118,7 +118,7 @@ const getUserVideos = asyncHandler(async (req, res) => {
       return res.status(200).json(new apiResponse(200, videos, "success"));
     }
 
-    await redis.set(cacheKey, JSON.stringify(videos), 'EX', 60);
+    // await redis.set(cacheKey, JSON.stringify(videos), 'EX', 60);
 
     return res.status(200).json(new apiResponse(200, videos, "success"));
   } catch (error) {
@@ -210,12 +210,12 @@ const videoDetails = asyncHandler(async (req, res) => {
   //   { _id: new mongoose.Types.ObjectId(videoId) },
   //   { $inc: { views: 1 } }
   // );
-  const cacheKey = `videoDetails:${videoId}`;
-  const cacheValue = await redis.get(cacheKey);
+  // const cacheKey = `videoDetails:${videoId}`;
+  // const cacheValue = await redis.get(cacheKey);
 
-  if(cacheValue){
-    return res.status(200).json(new apiResponse(200, JSON.parse(cacheValue), "success"));
-  }
+  // if(cacheValue){
+  //   return res.status(200).json(new apiResponse(200, JSON.parse(cacheValue), "success"));
+  // }
 
   const videoDetails = await videoModel.aggregate([
     { $match: { _id: new mongoose.Types.ObjectId(videoId) } },
@@ -292,7 +292,7 @@ const videoDetails = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "video not found" });
   }
 
-  await redis.set(cacheKey, JSON.stringify(videoDetails[0]), 'EX', 60);
+  // await redis.set(cacheKey, JSON.stringify(videoDetails[0]), 'EX', 60);
   
   return res.status(200).json(new apiResponse(200, videoDetails[0], "success"));
 });
