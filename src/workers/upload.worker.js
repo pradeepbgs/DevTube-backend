@@ -7,6 +7,7 @@ import {uploadOnCloudinary} from '../utils/cloudinary.js'
         console.log("Worker data received:", workerData);
         let video;
         if (videoFile) {
+            console.log("this is lineno 10 from worker",videoFile)
             video = await uploadOnCloudinary(videoFile);
             console.log("video uploaded: ",video);
         }
