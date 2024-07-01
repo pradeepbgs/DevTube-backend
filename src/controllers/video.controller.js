@@ -165,19 +165,20 @@ const videoUpload = asyncHandler(async (req, res) => {
     })
 
     videoWorker.on("message", async (data) => {
+      console.log("Worker message:", data);
       if (data.error) {
         cleanUploadedfiles(req.files)
         return res.status(400).json(new apiError(400, data.error));
       }
 
-      const { video, thumbnailUrl } = data;
+      const { video, thumbnailUrl } = await data;
 
       const uploadedVideo = await videoModel.create({
         title,
         description,
         videoFile: video.url ?? "",
-        thumbnail: thumbnailUrl.url ?? "",
-        duration: video.duration ?? 0,
+        thumbnail: thumbnailUrl?.url ?? "",
+        duration: video?.duration ?? 0,
         owner: user?._id,
       });      
 
@@ -187,7 +188,8 @@ const videoUpload = asyncHandler(async (req, res) => {
 
     })
 
-    videoWorker.on('error', () => {
+    videoWorker.on('error', (error) => {
+      console.error("Worker error:", error);
       cleanUploadedfiles(req.files);
       return res.status(400).json(new apiError(400, "error while uploading video"));
     })
