@@ -165,7 +165,6 @@ const videoUpload = asyncHandler(async (req, res) => {
     })
 
     videoWorker.on("message", async (data) => {
-      console.log("Worker message:", data);
       if (data.error) {
         cleanUploadedfiles(req.files)
         return res.status(400).json(new apiError(400, data.error));
