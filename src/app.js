@@ -26,6 +26,9 @@ import healthcheckRouter from './routes/healthcheck.routes.js'
 import dashboardRouter from './routes/dashboard.routes.js'
 
 // route declaration
+app.get("/",(req,res) => {
+    res.send("hello world");
+})
 app.use('/api/v1/users', userRouter)
 app.use('/api/v1/videos', videoRouter)
 app.use('/api/v1/comments', commentRouter)
