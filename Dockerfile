@@ -1,5 +1,5 @@
 # Use node 18 as the base image
-FROM node:18 as builder
+FROM node:18-alpine as builder
 
 # Set the working directory
 WORKDIR /build
