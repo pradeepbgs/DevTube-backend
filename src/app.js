@@ -5,7 +5,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "https://fsvideo.vercel.app",
+    origin: "https://fstube.vercel.app",
     credentials: true,
   })
 );
