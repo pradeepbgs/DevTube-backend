@@ -37,7 +37,7 @@ router.route("/login").post(loginUser);
 
 // secured routes
 
-router.route("/logout").post( verifyJwt , logoutUser);
+router.route("/logout").post( logoutUser);
 router.route('/refresh-token').post(verifyJwt, refreshAccessToken);
 router.route('/change-password').post( verifyJwt , changeCurrentPassword);
 router.route('/current-user').get( verifyJwt , getCurrentUser);

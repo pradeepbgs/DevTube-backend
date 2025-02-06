@@ -1,5 +1,5 @@
 import { Worker } from "worker_threads";
-// import {redis} from '../utils/redisClient.js'
+import {redis} from '../utils/redisClient.js'
 import { apiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
@@ -210,7 +210,8 @@ const videoDetails = asyncHandler(async (req, res) => {
   //   { _id: new mongoose.Types.ObjectId(videoId) },
   //   { $inc: { views: 1 } }
   // );
-  // const cacheValue = await redis.get(`videoDetails:${videoId}`);
+	// let cacheKey = `videoDeatils:${videoId}`
+  // const cacheValue = await redis.get(cacheKey);
 
   // if(cacheValue){
   //   return res.status(200).json(new apiResponse(200, JSON.parse(cacheValue), "success"));
@@ -291,7 +292,7 @@ const videoDetails = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "video not found" });
   }
 
-  // await redis.set(`videoDetails:${videoId}`, JSON.stringify(videoDetails[0]), 'EX', 30);
+  // await redis.set(cacheKey, JSON.stringify(videoDetails[0]), 'EX', 30);
   
   return res.status(200).json(new apiResponse(200, videoDetails[0], "success"));
 });

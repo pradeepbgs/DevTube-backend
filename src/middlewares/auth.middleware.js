@@ -5,12 +5,15 @@ import jwt from "jsonwebtoken"
 
 export const verifyJwt = asyncHandler(async (req, res, next) => {
     try {
-        let token = req.cookies?.accessToken || req.header("Authorization");
-        
+        let token = req.cookies?.accessToken || req?.header("Authorization");
         if (!token) {
-           res.status(401).json({ message: "no access token found , Unauthorize request" });
+           return res.status(401).json({ message: "no access token found , Unauthorize request" });
             throw new apiError("no access token found, Unauthorize request");
         }
+
+        // if (token) {
+        //     res.status(401).json({ message: "Please login to get access token" });
+        // }
 
         // Remove "Bearer " from the token if present
         if (token.startsWith("Bearer ")) {

@@ -29,13 +29,12 @@ const generateAccessAndRefreshToken = async (userId) => {
   }
 };
 
-const registerUser = asyncHandler(async (req, res) => {
+export const registerUser = asyncHandler(async (req, res) => {
   const { fullname, email, username, password } = req.body;
 
   if ([fullname, email, username, password].some((field) => field?.trim() === "")) {
     return res.status(400).json({ message: "All fields are required" });
   }
-
   const existingUser = await User.findOne({ $or: [{ username }, { email }] });
   if (existingUser) {
     fs.unlinkSync(req.files?.avatar[0].path);
@@ -56,7 +55,6 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!avatarLocalpath) {
     return res.status(400).json({ message: "Avatar is required" });
   }
-
   const uploadWorker = new Worker("./src/workers/upload.worker.js", {
     workerData: { avatarLocalpath, coverImageLocalpath },
   });
@@ -66,7 +64,6 @@ const registerUser = asyncHandler(async (req, res) => {
       return res.status(400).json(new apiResponse(400, {}, data.error));
     }
     const { avatar, coverImage } = data;
-
     const user = await User.create({
       fullname,
       avatar: avatar.url ?? "",
@@ -85,7 +82,7 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 });
 
-const loginUser = asyncHandler(async (req, res) => {
+export const loginUser = asyncHandler(async (req, res) => {
   // get the details from user from req.body  ---done
   // username or email
   // find the user
@@ -145,7 +142,7 @@ const loginUser = asyncHandler(async (req, res) => {
     );
 });
 
-const logoutUser = asyncHandler(async (req, res) => {
+export const logoutUser = asyncHandler(async (req, res) => {
   // clear cookie
   await User.findByIdAndUpdate(
     req.user?._id,
@@ -171,7 +168,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, {}, "user logged out"));
 });
 
-const refreshAccessToken = asyncHandler(async (req, res) => {
+export const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken =
     req.cookies?.refreshToken || req.body.refreshToken;
 
@@ -223,7 +220,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
-const changeCurrentPassword = asyncHandler(async (req, res) => {
+export const changeCurrentPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
   const user = await User.findById(req.user?._id);
@@ -243,7 +240,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, {}, "Password changed successfully"));
 });
 
-const getCurrentUser = asyncHandler(async (req, res) => {
+export const getCurrentUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user?._id).select("-password");
 
   return res
@@ -251,7 +248,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, user, "User fetched successfully"));
 });
 
-const updateAccountDetail = asyncHandler(async (req, res) => {
+export const updateAccountDetail = asyncHandler(async (req, res) => {
   const { fullname, email } = req.body;
 
   if (!(fullname || email)) {
@@ -275,7 +272,7 @@ const updateAccountDetail = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, user, "Account details updated successfully"));
 });
 
-const updateUserAvatar = asyncHandler(async (req, res) => {
+export const updateUserAvatar = asyncHandler(async (req, res) => {
   const avatarLocalpath = req.file?.path;
   try {
     if (!avatarLocalpath) return new apiError(400, "Avatar file is missing");
@@ -324,7 +321,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   }
 });
 
-const updateUserCoverImage = asyncHandler(async (req, res) => {
+export const updateUserCoverImage = asyncHandler(async (req, res) => {
   const coverImageLocalpath = req.file?.path;
   try {
     if (!coverImageLocalpath)
@@ -374,7 +371,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   }
 });
 
-const getUserChannelProfile = asyncHandler(async (req, res) => {
+export const getUserChannelProfile = asyncHandler(async (req, res) => {
   const { username } = req.params;
 
   if (!username?.trim()) {
@@ -447,7 +444,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     );
 });
 
-const getWatchHistory = asyncHandler(async (req, res) => {
+export const getWatchHistory = asyncHandler(async (req, res) => {
   const user = await User.aggregate([
     {
       $match: {
@@ -501,16 +498,4 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     );
 });
 
-export {
-  registerUser,
-  loginUser,
-  logoutUser,
-  refreshAccessToken,
-  changeCurrentPassword,
-  getCurrentUser,
-  updateAccountDetail,
-  updateUserAvatar,
-  updateUserCoverImage,
-  getUserChannelProfile,
-  getWatchHistory,
-};
+

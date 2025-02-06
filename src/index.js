@@ -1,10 +1,8 @@
 import connectDB from "./db/index.js";
 import app from './app.js'
-process.loadEnvFile()
 
 
-connectDB()
-
+await connectDB()
 .then(() =>(
     app.listen(process.env.PORT || 3000, () =>{
         console.log(`app is running on http://localhost:${process.env.PORT}`)

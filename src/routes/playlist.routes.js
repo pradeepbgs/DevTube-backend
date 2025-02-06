@@ -16,20 +16,20 @@ import {
 
 const router = Router()
 
-router.use(verifyJwt)
+// router.use(verifyJwt)
 
-router.route('/').post(createPlaylist)
+router.route('/').post(verifyJwt,createPlaylist)
 
 router.route('/user/:userId').get(getUserPlaylists)
 
 router.route('/:playlistId')
             .get(getPlaylistById)
-            .delete(deletePlaylist)
-            .patch(updatePlaylist);
+            .delete(verifyJwt,deletePlaylist)
+            .patch(verifyJwt,updatePlaylist);
 
-router.route('/add/:videoId/:playlistId').patch(addVideoToPlaylist)
+router.route('/add/:videoId/:playlistId').patch(verifyJwt,addVideoToPlaylist)
 
-router.route('/remove/:videoId/:playlistId').patch(removeVideoFromPlaylist)
+router.route('/remove/:videoId/:playlistId').patch(verifyJwt,removeVideoFromPlaylist)
 
 
 export default router

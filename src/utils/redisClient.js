@@ -2,3 +2,4 @@
 
 // export const redis = new Redis()
 
+export const redis = null

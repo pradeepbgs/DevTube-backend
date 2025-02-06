@@ -44,7 +44,45 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
     return res.status(400).json(new apiError(400, "user id is not valid"));
   }
 
-  const playlists = await Playlist.find({ owner: userId });
+  const playlists = await Playlist.aggregate([
+    {
+      $match: {
+        owner: new mongoose.Types.ObjectId(userId)
+      }
+    },
+    {
+      $lookup: {
+        from:'users',
+        localField:'owner',
+        foreignField:'_id',
+        as:'owner'
+      }
+    },
+    {
+      $lookup:{
+        from:'videos',
+        localField:'videos',
+        foreignField:'_id',
+        as:'videos',
+      }
+    },
+    {
+      $unwind:'$owner'
+    },
+    {
+      $project:{
+        name:1,
+        description:1,
+        videoCount: { $size: { $ifNull: ['$videos', []] } },
+        owner:{
+          username:1,
+          fullname:1,
+          avatar:1
+        }
+      }
+    }
+  ])
+
   if (!playlists) {
     return res.status(400).json(new apiError(400, "playlists not found"));
   }
@@ -57,69 +95,63 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
 const getPlaylistById = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
 
-  if (!playlistId || !isValidObjectId(playlistId)) {
-    return res.status(400).json(new apiError(400, "Playlist ID is not valid or required"));
+  // Validate playlistId
+  if (!playlistId || !mongoose.isValidObjectId(playlistId)) {
+    return res
+      .status(400)
+      .json(new apiError(400, "Playlist ID is not valid or required"));
   }
 
-  const playlistInfo = await Playlist.aggregate([
-    {
-      $match: {
-        _id: new mongoose.Types.ObjectId(playlistId),
+  try {
+    const playlistInfo = await Playlist.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(playlistId),
+        },
       },
-    },
-    {
-      $lookup: {
-        from: "videos",
-        localField: "videos",
-        foreignField: "_id",
-        as: "videos",
-        pipeline: [
-          {
-            $lookup: {
-              from: "users",
-              localField: "owner",
-              foreignField: "_id",
-              as: "owner"
-            }
-          },
-          {
-            $unwind: "$owner"
-          },
-          {
-            $project: {
-              _id: 1,
-              title: 1,
-              thumbnail: 1,
-              owner: {
-                username: "$owner.username",
-                profilePicture: "$owner.avatar",
-              }
+      {
+        $lookup: {
+          from: "videos",
+          localField: "videos",
+          foreignField: "_id",
+          as: "videos",
+        },
+      },
+      {
+        $project: {
+          videos: {
+            $map: {
+              input: "$videos",
+              as: "video",
+              in: {
+                _id: "$$video._id",
+                title: "$$video.title",
+                thumbnail: "$$video.thumbnail",
+                duration: "$$video.duration",
+                createdAt: "$$video.createdAt",
+                views: "$$video.views",
+                isPublished: "$$video.isPublished",
+              },
             },
           },
-        ]
-      }
-    },
-    {
-      $project: {
-        name:1,
-        description: 1,
-        "videos._id": 1,
-        "videos.title": 1,
-        "videos.thumbnail": 1,
-        "videos.owner.username": 1,
-        "videos.owner.profilePicture": 1,
-      }
+        },
+      },
+    ]);
+
+    if (playlistInfo.length === 0) {
+      return res.status(404).json(new apiError(404, "Playlist not found"));
     }
-  ]);
 
-  if (playlistInfo.length === 0) {
-    return res.status(404).json(new apiError(404, "Playlist not found"));
+    return res
+      .status(200)
+      .json(new apiResponse(200, playlistInfo[0], "Playlist found successfully"));
+  } catch (error) {
+    return res
+      .status(500)
+      .json(new apiError(500, "Internal Server Error", error.message));
   }
-
-  return res
-    .status(200)
-    .json(new apiResponse(200, playlistInfo, "Playlist found successfully"));
 });
+
 
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
   const { playlistId, videoId } = req.params;
