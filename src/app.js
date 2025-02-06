@@ -4,6 +4,8 @@ import cookieParser from 'cookie-parser'
 import { fileURLToPath } from "url";
 import path from 'path';
 const app = express()
+import dotenev from 'dotenv'
+dotenev.config()
 
 // app.use(cors({
 //     origin: '*',
