@@ -1,5 +1,5 @@
 import { Worker } from "worker_threads";
-import {redis} from '../utils/redisClient.js'
+// import {redis} from '../utils/redisClient.js'
 import { apiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {

@@ -43,6 +43,11 @@ app.use('/api/v1/likes', likesRouter)
 app.use("/api/v1/healthcheck", healthcheckRouter)
 app.use("/api/v1/dashboard", dashboardRouter)
 
+app.get("/api/v1/users",(_,res) => {
+    res.json({
+        msg:"Welcome to nodejs service"
+    })
+})
 
 app.get("*",(req,res) =>{
     res.sendFile(path.join(__dirname, "../dist", "index.html"));
