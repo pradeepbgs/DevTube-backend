@@ -1,6 +1,13 @@
-import connectDB from "./db/index.js";
-import app from './app.js'
+import connectDB from "./src/db/index.js";
+import app from './src/app.js'
+import path from 'path'
+import fs from 'fs'
 
+const publicfolder = path.join(process.cwd(), 'public')
+
+if(!fs.existsSync(publicfolder)){
+    fs.mkdirSync(publicfolder, {recursive: true})
+}
 
 await connectDB()
 .then(() =>(
