@@ -3,15 +3,25 @@ import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import { fileURLToPath } from "url";
 import path from 'path';
+import { rateLimit } from 'express-rate-limit'
+import helmet from 'helmet'
+
 const app = express()
 import dotenev from 'dotenv'
 dotenev.config()
 
-// app.use(cors({
-//     origin: '*',
-//     credentials: true,
-// }))
- 
+app.use(rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 200, 
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+}))
+
+app.use(cors({
+    origin: ['https://video-backend-3ot2.onrender.com',"http://localhost:3000"],
+    credentials: true,
+}))
+app.use(helmet())
 app.use(express.json({limit: '16kb'}))
 app.use(express.urlencoded({extended: true, limit:'16kb'}))
 app.use(cookieParser())
