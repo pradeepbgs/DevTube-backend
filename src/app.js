@@ -1,27 +1,32 @@
 import express from 'express'
-import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import { fileURLToPath } from "url";
 import path from 'path';
-import { rateLimit } from 'express-rate-limit'
-import helmet from 'helmet'
-
 const app = express()
 import dotenev from 'dotenv'
 dotenev.config()
+import helmet from 'helmet'
 
-app.use(rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 200, 
-    standardHeaders: 'draft-7',
-    legacyHeaders: false,
-}))
+// app.use(cors({
+//     origin: '*',
+//     credentials: true,
+// }))
 
-app.use(cors({
-    origin: ['https://video-backend-3ot2.onrender.com',"http://localhost:3000"],
-    credentials: true,
-}))
-app.use(helmet())
+
+app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "https:", "'unsafe-inline'"],
+        fontSrc: ["'self'", "https:", "data:"],
+        connectSrc: ["'self'", "https:"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+  }))
 app.use(express.json({limit: '16kb'}))
 app.use(express.urlencoded({extended: true, limit:'16kb'}))
 app.use(cookieParser())
@@ -41,23 +46,25 @@ import playlistRouter from './routes/playlist.routes.js'
 import likesRouter from './routes/like.routes.js'
 import healthcheckRouter from './routes/healthcheck.routes.js'
 import dashboardRouter from './routes/dashboard.routes.js'
+import { authRouter } from './routes/auth.routes.js';
 
 // route declaration
-app.use('/api/v1/users', userRouter)
-app.use('/api/v1/videos', videoRouter)
-app.use('/api/v1/comments', commentRouter)
-app.use('/api/v1/subscriptions', subscriptionRouter)
-app.use('/api/v1/tweets',tweetRouter)
-app.use('/api/v1/playlists', playlistRouter)
-app.use('/api/v1/likes', likesRouter)
+app.use('/api/v1/auth',authRouter)
+app.use('/api/v1/user', userRouter)
+app.use('/api/v1/video', videoRouter)
+app.use('/api/v1/comment', commentRouter)
+app.use('/api/v1/subscription', subscriptionRouter)
+app.use('/api/v1/tweet',tweetRouter)
+app.use('/api/v1/playlist', playlistRouter)
+app.use('/api/v1/like', likesRouter)
 app.use("/api/v1/healthcheck", healthcheckRouter)
 app.use("/api/v1/dashboard", dashboardRouter)
 
-app.get("/api/v1/users",(_,res) => {
-    res.json({
-        msg:"Welcome to nodejs service"
-    })
-})
+// app.get("/api/v1/users",(_,res) => {
+//     res.json({
+//         msg:"Welcome to nodejs service"
+//     })
+// })
 
 app.get("*",(req,res) =>{
     res.sendFile(path.join(__dirname, "../dist", "index.html"));

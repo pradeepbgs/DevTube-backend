@@ -1,17 +1,10 @@
-import connectDB from "./src/db/index.js";
-import app from './src/app.js'
-import path from 'path'
-import fs from 'fs'
+import connectDB from "./db/index.js";
+import app from './app.js'
 
-const publicfolder = path.join(process.cwd(), 'public')
-
-if(!fs.existsSync(publicfolder)){
-    fs.mkdirSync(publicfolder, {recursive: true})
-}
 
 await connectDB()
 .then(() =>(
-    app.listen(process.env.PORT || 3000, () =>{
+    app.listen(process.env.PORT, () =>{
         console.log(`app is running on http://localhost:${process.env.PORT}`)
     })
 ))

@@ -5,7 +5,7 @@ import {v4 as uuidv4} from 'uuid'
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, './public')
+      cb(null, './public/temp')
     },
     filename: function (req, file, cb) {
       const uniqueName = uuidv4()

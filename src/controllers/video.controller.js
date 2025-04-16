@@ -98,7 +98,7 @@ const getUserVideos = asyncHandler(async (req, res) => {
         $project: {
           title: 1,
           description: 1,
-          url: 1,
+          videoFile: 1,
           thumbnail: 1,
           duration: 1,
           views: 1,
@@ -274,7 +274,7 @@ const videoDetails = asyncHandler(async (req, res) => {
           _id: 1,
           fullname: 1,
           username: 1,
-          avatar: 1,
+          avatar: 1 ?? "",
         },
         isSubscribed: 1,
         isLiked: 1,
@@ -383,8 +383,8 @@ const deleteVideo = asyncHandler(async (req, res) => {
       owner: req.user?._id,
     });
 
-    if (deletedVideo && deletedVideo.url) {
-      deletOnCloudanry(getPublicId(deletedVideo.url));
+    if (deletedVideo && deletedVideo.videoFile) {
+      deletOnCloudanry(getPublicId(deletedVideo.videoFile));
     } else {
       throw new apiError(401, "Video not found");
     }
