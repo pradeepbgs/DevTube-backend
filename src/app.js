@@ -6,12 +6,21 @@ const app = express()
 import dotenev from 'dotenv'
 dotenev.config()
 import helmet from 'helmet'
+import { rateLimit } from 'express-rate-limit'
 
 // app.use(cors({
 //     origin: '*',
 //     credentials: true,
 // }))
 
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000,
+	limit: 200, 
+	standardHeaders: 'draft-8', 
+	legacyHeaders: false,
+})
+
+app.use(limiter)
 
 app.use(helmet({
   contentSecurityPolicy: {
