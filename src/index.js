@@ -4,8 +4,8 @@ import app from './app.js'
 
 await connectDB()
 .then(() =>(
-    app.listen(process.env.PORT, () =>{
-        console.log(`app is running on http://localhost:${process.env.PORT}`)
+    app.listen(process.env.PORT, "127.0.0.1", () =>{
+        console.log(`app is running on http://127.0.0.1:${process.env.PORT}`)
     })
 ))
 .catch((err) => (
